@@ -191,11 +191,11 @@ const LoginScreen = ({navigation}) => {
             >
             <Text style={[styles.textSign, {
               color: '#FE6666'
-            }]}>Login</Text>
+            }]}>Sign In</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.linkStyle} onPress={() => navigation.navigate('RegistrationScreen')}>
-              <Text style={{ color: '#FE6666', marginTop: 15, fontSize: 16, textDecorationLine: 'underline' }}>Don't have an account? Sign Up</Text>
+              <Text style={{ color: '#FE6666', marginTop: 15, fontSize: 16, textDecorationLine: 'underline' }}>Don't have an account yet ? Sign Up</Text>
             </TouchableOpacity>
 
         </View> 

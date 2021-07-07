@@ -10,17 +10,17 @@ import {
   StatusBar,
   ScrollView, 
   SafeAreaView,
-  Alert
+  
 } from 'react-native';
-//import DocumentPicker from 'react-native-document-picker';
+
 import {
   Dropdown
 } from 'sharingan-rn-modal-dropdown';
-import CheckBox from 'react-native-check-box';
-import DatePicker from 'react-native-datepicker';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import * as Animatable from 'react-native-animatable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
+import { Checkbox } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
@@ -31,7 +31,10 @@ const PassScreen = ({navigation}) => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [mobileNo, setMobileNo] = useState('');
+
     const [dob, setDob] = useState('');
+    const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
     const [phyAddLine1, setPhyAddLine1] = useState('');
     const [phyAddLine2, setPhyAddLine2] = useState('');
     const [phyCity, setPhyCity] = useState('');
@@ -40,32 +43,40 @@ const PassScreen = ({navigation}) => {
     const [postalAddLine2, setPostalAddLine2] = useState('');
     const [postalCity, setPostalCity] = useState('');
     const [postalZipCode, setPostalZipCode] = useState('');
+    const [checked, setChecked] = React.useState(false);
+
 
     const [memberTypeData, setMemberTypeData] = useState([]);
     const [memberTypeId, setMemberTypeId] = useState(0);
     const [documentData, setDocumentData] = useState([]);
     const [documentId, setDocumentId] = useState(0);
+
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState('');
-
-    // const [open, setOpen] = useState(false);
-    // const [value, setValue] = useState(null);
-    // const [items, setItems] = useState([
-    //   {label: 'Student', value: 'Student'},
-    //   {label: 'Kid', value: 'Kid'},
-    //   {label: 'Senior Citizen', value: 'Senior Citizen'}
-    // ]);
-
-
-    // const [docOpen, setDocOpen] = useState(false);
-    // const [docValue, setDocValue] = useState(null);
-    // const [docItems, setDocItems] = useState([
-    //   {label: 'Bonafide Certificate', value: 'Bonafide Certificate'},
-    //   {label: 'Aadhar Card', value: 'Aadhar Card'}
-    // ]);
     
-   
+    const showAlert = (title, message) => {
+      Alert.alert(title, message, [
+        {text : 'Okay'},
+        {text : 'Cancel'}
+      ]);
+    } 
   
+    const showDatePicker = () => {
+      setDatePickerVisibility(true);
+      console.log("jj");
+    };
+  
+    const hideDatePicker = () => {
+      setDatePickerVisibility(false);
+    };
+  
+    const handleConfirm = (date) => {
+      console.warn("A date has been picked: ", date);
+      setDob(date);
+      hideDatePicker();
+    };
+    
   useEffect(async() => {
     const token = await AsyncStorage.getItem('jwtToken');
     setToken(token);
@@ -77,20 +88,85 @@ const PassScreen = ({navigation}) => {
     const headers = { 'Authorization': 'Bearer ' + token }
     axios.get(baseurl + '/member-types', { headers })
       .then(response => {
-        console.log(response.data);
+        if (response.status == 200) {
+          setData(response.data);
+          let dt = response.data;
+          console.log(dt);
+          let arr = [];
+          for (let i = 0; i < dt.length; i++) {
+            arr.push({
+              value : dt[i].memberTypeId,
+              label : dt[i].memberTypeName
+            });
+          }
+          setMemberTypeData(arr);
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch(error => {
+        showAlert('error', 'Network Error.');
       })
   }
+
+  const displayDocument = (memberTypeId) => {
+    
+    const headers = { 'Authorization': 'Bearer ' + token }
+    axios.get(baseurl + '/proofs/member-types/' + memberTypeId , { headers })
+      .then(response => {
+        setLoading(false);
+        
+        if (response.status == 200) {
+          setData(response.data);
+          let dt = response.data;
+          console.log(dt);
+          let arr = [];
+          for (let i = 0; i < dt.length; i++) {
+            arr.push({
+              value : dt[i].proofId,
+              label : dt[i].proofName
+            });
+          }
+          setDocumentData(arr);
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch(error => {
+        showAlert('error', 'Network Error.');
+      })
+  }
+
+
   const onChangeMemberType = (value) => {
     setMemberTypeId(value);
-};
+    displayDocument(value);
+  };
+
+  const onChangeDocument = (value) => {
+    setDocumentId(value);
+  };
+
+  const handlePostalAddress = () => {
+    setPostalAddLine1(phyAddLine1);
+    setPostalAddLine2(phyAddLine2);
+    setPostalZipCode(phyZipCode);
+    setPostalCity(phyCity);
+  }
+ 
+  const clearPostalAddress = () => {
+    setPostalAddLine1("");
+    setPostalAddLine2("");
+    setPostalZipCode("");
+    setPostalCity("");
+  }
+
   return (
       <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FE6666" barStyle="light-content" />
 
-        {/* <View style={styles.header}>
-          <Text style={styles.text_header}>Pass Request</Text>
-        </View> */}
-  
         <Animatable.View 
           animation="fadeInUpBig"
           style={styles.footer}
@@ -170,36 +246,35 @@ const PassScreen = ({navigation}) => {
              />
           </View>
 
-          <Text style={[styles.text_footer, { marginTop:20 }]}>Date of Birth</Text>
-          <View style={styles.action}>
-            {/* <FontAwesome
-              name="calendar"
-              color="#000000"
-              size={20}
-            /> */}
-            {/* <DatePicker
-              style={{width: 200}}
-              mode="date"
-              date={dob}
-              format="YYYY-MM-DD"
-              placeholder="Select Date"
-              confirmBtnText="Confirm"
-              cancelBtnText="Cancel"
-              customStyles={{
-                dateIcon: {
-                position: 'absolute',
-                left: 0,
-                top: 4,
-                marginLeft: 0
-                },
-                dateInput: {
-                marginLeft: 36
-                }
-              }}
-              onDateChange={(date) => setDob(date)}
-              value={dob}
-            />  */}
-          </View>
+          <Text style={[styles.text_footer, { marginTop: 20 }]}>Date of Birth</Text>
+            <View style={styles.action}>
+              <TextInput
+                placeholder="Date"
+                style={styles.textInput}
+                autoCapitalize="none"
+                onChangeText={(val) => setDob(val)}
+                value={dob + ""}
+                maxLength={20}
+              />
+              <TouchableOpacity onPress={showDatePicker}>
+                <Animatable.View
+                  animation="bounceIn"
+                >
+                  <Feather
+                    name="calendar"
+                    color="#FE6666"
+                    size={25}
+                  />
+                </Animatable.View>
+              </TouchableOpacity>
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date" 
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
+            </View>
+            
 
           <Text style={[styles.text_footer, { marginTop:20 }]}>Physical Address</Text>
           <View style={styles.action}>
@@ -305,15 +380,19 @@ const PassScreen = ({navigation}) => {
           </View>
 
           <Text style={[styles.text_footer, { marginTop:20}]}>Postal Address </Text>
-          <CheckBox
-            style={{
-              flex: 1,
-              paddingTop:5
+          <Checkbox.Item
+            status={checked ? 'checked' : 'unchecked'}
+            color="#FE6666"
+            uncheckedColor="#bdc4ca"
+            label="Same As Physical"
+            onPress={() => {
+              setChecked(!checked);
+              console.log(checked);
+              if(!checked){ handlePostalAddress(); }
+              else{ clearPostalAddress(); }
+              
             }}
-            onClick={(val)=>{console.log(val)}}
-            rightText={"Same as Physical"}
           />
-         
           
           <View style={styles.action}>
             <FontAwesome
@@ -429,25 +508,36 @@ const PassScreen = ({navigation}) => {
             />
           </View>
 
-          {/* <Text style={[styles.text_footer, { marginTop:25 }]}>Documents</Text>
+          <Text style={[styles.text_footer, { marginTop:25 }]}>Documents</Text>
           <View style={styles.action}>
             <Dropdown
-              label="Select Documents "
-              data={docData}
+              label="Select Documents"
+              data={documentData}
               enableSearch
-              // value={docId}
-              // onChange={onMemberTypeSS}
+              value={documentId}
+              onChange={onChangeDocument}
             />
-          </View> */}
+          </View>
        
+          <View style={{ marginTop: 50 }}></View>
 
-          <View style={styles.button}></View>
-          <Button
-          title="Send"
-          //onPress={() => {}}
-          color="#FE6666"
-          />
-          <View style={{ marginTop: 500 }}></View>
+          <View style={styles.button}>
+            <TouchableOpacity
+              //onPress={handleSignIn}
+              style={[styles.signIn, {
+                borderColor: '#FE6666',
+                borderWidth: 2,
+                marginTop: 10
+                }]}
+            >
+            <Text style={[styles.textSign, {
+              color: '#FE6666'
+            }]}>SEND</Text>
+            </TouchableOpacity>
+
+        </View> 
+      
+          <View style={{ marginTop: 50 }}></View>
         </ScrollView>
       </Animatable.View>
     </SafeAreaView>
@@ -502,8 +592,8 @@ const styles = StyleSheet.create({
       fontSize: 14,
   },
   button: {
-      alignItems: 'center',
-      marginTop: 40
+    alignItems: 'center',
+    marginTop: 50
   },
   signIn: {
       width: '100%',

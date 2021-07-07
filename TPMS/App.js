@@ -45,7 +45,15 @@ const Stack = createStackNavigator();
             userName: action.userName,
             role: action.role, 
             jwtToken: action.jwtToken
-        };  
+        }; 
+      case 'LOGOUT' :
+        return {
+          ...prevState,
+          id: null,
+          userName: null,
+          role: null, 
+          jwtToken: null
+      };    
     }
   };
 
@@ -65,8 +73,22 @@ const Stack = createStackNavigator();
       }
       console.log('Token fron Login: ',jwtToken);
       dispatch({ type: 'LOGIN', id: id, userName: userName, role: role, jwtToken: jwtToken}); 
+    },
+
+    signOut: async() => {
+      try {
+          await AsyncStorage.removeItem('id');
+          await AsyncStorage.removeItem('userName');
+          await AsyncStorage.removeItem('role');
+          await AsyncStorage.removeItem('jwtToken');
+      }catch(e){
+        console.log(e);
+      }
     }
+
   }),[]);
+
+
 
   useEffect(() => {
     setTimeout(async() => {
@@ -79,8 +101,10 @@ const Stack = createStackNavigator();
       dispatch({ type: 'RETRIEVE_TOKEN',jwtToken: jwtToken });
     },1000);
   },[]);
-  console.log("abcs");
+  
   console.log(loginState);
+
+
    return (
      <SafeAreaProvider>
        <AuthContext.Provider value={authContext}>

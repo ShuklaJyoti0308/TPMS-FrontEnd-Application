@@ -275,20 +275,26 @@ const showAlert = (title, message) => {
           : null
         }
 
-        <View style={styles.button}></View>
-          <Button
-          title="Sign Up"
-          onPress={() => {handleSignUp()}}
-          color="#FE6666"
-          />
-        
+        <View style={styles.button}>
+            <TouchableOpacity
+              onPress={handleSignUp}
+              style={[styles.signUp, {
+                borderColor: '#FE6666',
+                borderWidth: 2,
+                marginTop: 10
+                }]}
+            >
+            <Text style={[styles.textSign, {
+              color: '#FE6666'
+            }]}>Sign Up</Text>
+            </TouchableOpacity>
 
-        <View style={styles.button}></View>
-        <Button
-          title="Sign In"
-          onPress={() => navigation.goBack()}
-          color="#FE6666"
-          />
+            <TouchableOpacity style={styles.linkStyle} onPress={() => navigation.goBack()}>
+              <Text style={{ color: '#FE6666', marginTop: 15, fontSize: 16, textDecorationLine: 'underline' }}>Have an account ? Sign In</Text>
+            </TouchableOpacity>
+
+        </View> 
+
         </ScrollView>  
       </Animatable.View>
     </SafeAreaView>
@@ -350,22 +356,22 @@ const styles = StyleSheet.create({
         color: '#FF0000',
         fontSize: 14,
     },
-    button: {
-        alignItems: 'center',
-        marginTop: 40
-    },
-    signIn: {
-        width: '100%',
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 10
-    },
-    textSign: {
-        fontSize: 18,
-        fontWeight: 'bold'
-    },
-    spinnerTextStyle: {
-      color: '#FFF'
-    }
+  button: {
+      alignItems: 'center',
+      marginTop: 50
+  },
+  signUp: {
+      width: '100%',
+      height: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 10
+  },
+  textSign: {
+      fontSize: 18,
+      fontWeight: 'bold'
+  },
+  linkStyle: {
+    marginTop: 20
+  }
   });

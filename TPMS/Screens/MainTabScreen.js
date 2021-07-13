@@ -97,7 +97,7 @@ const HomeStackScreen = ({navigation}) => (
         <HomeStack.Screen name="Home" component={HomeScreen} options={{
           title: 'TPMS',
           headerLeft: () => (
-            <Icon.Button name="ios-menu" size={25} iconStyle={{marginRight:0}}  backgroundColor="#FE6666" onPress={() => navigation.navigate('ProfileScreen')}></Icon.Button>
+            <Icon.Button name="ios-arrow-back" size={25} iconStyle={{marginRight:0}}  backgroundColor="#FE6666" onPress={() => navigation.goBack()}></Icon.Button>
           )
         }} />
   </HomeStack.Navigator>
@@ -116,7 +116,7 @@ const PassStackScreen = ({navigation}) => (
      <PassStack.Screen name="Pass" component={PassScreen} options={{
           title: 'Request for Transport Pass',
           headerLeft: () => (
-            <Icon.Button name="ios-menu" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.navigate('ProfileScreen')}></Icon.Button>
+            <Icon.Button name="ios-arrow-back" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.goBack()}></Icon.Button>
           )
         }} />
   </PassStack.Navigator>
@@ -135,7 +135,7 @@ const PackageStackScreen = ({navigation}) => (
      <PackageStack.Screen name="Package" component={PackageScreen} options={{
           title: 'Transport Package',
           headerLeft: () => (
-            <Icon.Button name="ios-menu" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.navigate('ProfileScreen')}></Icon.Button>
+            <Icon.Button name="ios-arrow-back" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.goBack()}></Icon.Button>
           )
         }} />
   </PackageStack.Navigator>
@@ -154,7 +154,7 @@ const TransportHistoryStackScreen = ({navigation}) => (
      <TransportHistoryStack.Screen name="TransportHistory" component={TransportHistoryScreen} options={{
           title: 'Transport History',
           headerLeft: () => (
-            <Icon.Button name="ios-menu" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.navigate('ProfileScreen')}></Icon.Button>
+            <Icon.Button name="ios-arrow-back" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.goBack()}></Icon.Button>
           )
         }} />
   </TransportHistoryStack.Navigator>
@@ -173,7 +173,7 @@ const ProfileStackScreen = ({navigation}) => (
       <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{
           title: 'Profile',
           headerLeft: () => (
-            <Icon.Button name="ios-menu" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.navigate('ProfileScreen')}></Icon.Button>
+            <Icon.Button name="ios-arrow-back" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.goBack()}></Icon.Button>
           )
         }} />
   </ProfileStack.Navigator>

@@ -55,11 +55,12 @@ const RegistrationScreen = ({navigation}) => {
 //         }
 //     );
 // }
-const showAlert = (title, message) => {
-  Alert.alert(title, message, [
-    {text: 'Okay'}
-  ]);
-}
+
+  const showAlert = (title, message) => {
+    Alert.alert(title, message, [
+      {text: 'Okay'}
+    ]);
+  }
 
   const handleSignUp = () => {
     console.log('Sign-Up');
@@ -81,14 +82,14 @@ const showAlert = (title, message) => {
     else{
       setLoading(true);
 
-      const reqDate = {
+      const reqData = {
         userName: userName,
         password: password,
         email: email,
         role: "USER"
       };
 
-      axios.post(baseurl+'/register', reqDate)
+      axios.post(baseurl+'/register', reqData)
       .then((response) => {
         console.log(response.status);
           setLoading(false);

@@ -56,8 +56,8 @@ const ProfileScreen = ({navigation}) => {
     axios.get(baseurl + '/users/' + userId,{ headers })
       .then((response) => {
         if(response.status == 200) {
-          //console.log('response from register :', response.data);
-          console.log("mail :: ", response.data[0].email);
+          console.log('response from register :', response.data);
+          //console.log("mail :: ", response.data[0].email);
           setRegData(response.data[0]);
         }  
         else
@@ -85,7 +85,7 @@ const ProfileScreen = ({navigation}) => {
         setRefreshing(false);
         if(response.status == 200) {
           //console.log('response from members :', response.data);
-          console.log("Fname :: ", response.data[0].mobileNo);
+          console.log("Mobile No :: ", response.data[0].mobileNo);
           setMemberData(response.data[0]);
           setShortName(response.data[0].firstName.substr(0, 1) + response.data[0].lastName.substr(0, 1));  
         }  

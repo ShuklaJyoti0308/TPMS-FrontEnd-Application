@@ -5,32 +5,35 @@ import {
   TouchableOpacity, 
   StyleSheet,
   TextInput,
-  Button,
   Platform,
   StatusBar,
   ScrollView, 
   SafeAreaView,
-  
+  Alert  
 } from 'react-native';
 
 import {
   Dropdown
 } from 'sharingan-rn-modal-dropdown';
+import { RadioButton } from 'react-native-paper';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import * as Animatable from 'react-native-animatable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import { Checkbox } from 'react-native-paper';
+import DocumentPicker from 'react-native-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
-
+import { Avatar } from "react-native-elements";
 
 const PassScreen = ({navigation}) => {
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [gender, setGender] = useState('Female');
     const [mobileNo, setMobileNo] = useState('');
+    const [profileImage, setProfileImage] = useState('C:\JYOTI_INTERN\TPMS_Data');
 
     const [dob, setDob] = useState('');
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -49,12 +52,25 @@ const PassScreen = ({navigation}) => {
     const [memberTypeData, setMemberTypeData] = useState([]);
     const [memberTypeId, setMemberTypeId] = useState(0);
     const [documentData, setDocumentData] = useState([]);
-    const [documentId, setDocumentId] = useState(0);
-
     const [data, setData] = useState([]);
+    
+
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState('');
-    
+    const [userId, setUserId] = useState(0);
+    const [memberId, setMemberId] = useState(0);
+
+    useEffect(async() => {
+      const token = await AsyncStorage.getItem('jwtToken');
+      setToken(token);
+      let userId = await AsyncStorage.getItem('id');
+      userId = parseInt(userId);
+      console.log("User id :" + userId);
+      setUserId(userId);
+
+      displayMemberType(token);
+    }, []);  
+  
     const showAlert = (title, message) => {
       Alert.alert(title, message, [
         {text : 'Okay'},
@@ -62,9 +78,69 @@ const PassScreen = ({navigation}) => {
       ]);
     } 
   
+
+    const openDocumentFile = async (proofId) => {
+      try {
+        const res = await DocumentPicker.pick({
+          type: [DocumentPicker.types.allFiles],
+        });
+        //console.log(res);
+        //console.log("Before Select : ",documentData);
+        if(validateImage(res)){
+          let data = [...documentData];
+          let proof = data.find((item) => item.proofId == proofId);
+          proof.proofImage = res
+          proof.proofPath = res.uri;
+          proof.proofFileName = res.name; 
+          proof.proofFileType = res.type;
+          setDocumentData(data);
+          //console.log("After File Select : ",documentData);
+        }
+       
+      } catch (err) {
+        if (DocumentPicker.isCancel(err)) {
+          // User cancelled the picker, exit any dialogs or menus and move on
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    const cancelDocumentFile = (proofId) => {
+      //console.log(documentData)
+      // way-1
+      // let data = [...documentData];
+      // let proof = data.find((item) => item.proofId == proofId);
+      // proof.avatarPath = "";
+      // proof.documentPicture = "";
+      // setDocumentData(data);
+
+      // way-2
+      setDocumentData((previousData) => {
+        let data = [...previousData];
+        let proof = data.find((item) => item.proofId == proofId);
+        proof.proofPath = "";
+        proof.proofFileName = "";
+        proof.proofFileType = "";
+        proof.proofImage = ""
+        return data;
+      });
+    };
+    const validateImage = (image) => {
+      let result = true;
+      
+      if (image.type != "image/jpeg" && image.type != "image/jpg" && image.type != "image/pdf") {
+          result = false;
+          showAlert('warning','Please select image of proper format. Only jpeg and pdf are allowed.');
+         
+      }
+      
+      return result;
+  }
+
+
     const showDatePicker = () => {
       setDatePickerVisibility(true);
-      console.log("jj");
     };
   
     const hideDatePicker = () => {
@@ -72,16 +148,10 @@ const PassScreen = ({navigation}) => {
     };
   
     const handleConfirm = (date) => {
-      console.warn("A date has been picked: ", date);
       setDob(date);
       hideDatePicker();
     };
     
-  useEffect(async() => {
-    const token = await AsyncStorage.getItem('jwtToken');
-    setToken(token);
-    displayMemberType(token);
-  }, []);  
 
   const displayMemberType = (token) => {
     console.log('Token : ' + token);
@@ -91,7 +161,7 @@ const PassScreen = ({navigation}) => {
         if (response.status == 200) {
           setData(response.data);
           let dt = response.data;
-          console.log(dt);
+          //console.log(dt);
           let arr = [];
           for (let i = 0; i < dt.length; i++) {
             arr.push({
@@ -111,42 +181,40 @@ const PassScreen = ({navigation}) => {
   }
 
   const displayDocument = (memberTypeId) => {
-    
     const headers = { 'Authorization': 'Bearer ' + token }
+    setLoading(true);
     axios.get(baseurl + '/proofs/member-types/' + memberTypeId , { headers })
       .then(response => {
         setLoading(false);
         
         if (response.status == 200) {
-          setData(response.data);
+          //console.log(response.data);
+
           let dt = response.data;
-          console.log(dt);
-          let arr = [];
-          for (let i = 0; i < dt.length; i++) {
-            arr.push({
-              value : dt[i].proofId,
-              label : dt[i].proofName
-            });
-          }
-          setDocumentData(arr);
+          dt.forEach((item) => {
+            // item.proofId = dt.proofId;
+            // item.proofName = dt.proofName;
+            item.proofPath = "";
+            item.proofFileName = "";
+            item.proofFileType = "";
+            item.profileImage = "";
+          });
+          setDocumentData(dt);
         }
         else {
           showAlert('error', 'Network Error.');
         }
       })
       .catch(error => {
+        setLoading(false);
         showAlert('error', 'Network Error.');
       })
   }
 
-
   const onChangeMemberType = (value) => {
+  console.log("id of Memebr Type :" , value);
     setMemberTypeId(value);
     displayDocument(value);
-  };
-
-  const onChangeDocument = (value) => {
-    setDocumentId(value);
   };
 
   const handlePostalAddress = () => {
@@ -163,6 +231,163 @@ const PassScreen = ({navigation}) => {
     setPostalCity("");
   }
 
+  const passRequesthandler = () => {
+    if ( firstName.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter first name to proceed.');
+    }
+    else if ( lastName.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter last name to proceed.');
+    }
+    else if ( gender.length==0 ) {
+      showAlert('Wrong Input!', 'Please select gender to proceed.');
+    }
+    else if ( mobileNo.length<10 ) {
+      showAlert('Wrong Input!', 'Please enter 10 digit valid mobile number proceed.');
+    }
+    else if ( dob == '' ) {
+      showAlert('Wrong Input!', 'Please select date of birth to proceed.');
+    }
+    else if ( phyAddLine1.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter addline1 of permanent address to proceed.');
+    }
+    else if ( phyAddLine2.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter addline2 of permanent address to proceed.');
+    }
+    else if ( phyZipCode.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter zip code of permanent address to proceed.');
+    }
+    else if ( phyCity.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter city of permanent address to proceed.');
+    }
+    else if ( postalAddLine1.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter addline1 of postal address to proceed.');
+    }
+    else if ( postalAddLine2.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter addline2 of postal address to proceed.');
+    }
+    else if ( postalZipCode.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter zip code of postal address to proceed.');
+    }
+    else if ( postalCity.length==0 ) {
+      showAlert('Wrong Input!', 'Please enter city of postal address to proceed.');
+    }
+    // else if ( memberTypeId==0 ) {
+    //   showAlert('Wrong Input!', 'Please select user type to proceed.');
+    // }
+    else
+    {
+      //setLoading(true);
+      
+      const reqData = {
+        userId: userId,
+        memberTypeId: memberTypeId,
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender,
+        mobileNo: mobileNo,
+        dob: dob,
+        profileImage: profileImage
+      };
+
+      const headers = { 'Authorization': 'Bearer ' + token }
+
+      axios.post(baseurl + '/members', reqData, { headers })
+        .then((response) => {
+          console.log(response.status)
+          if(response.status == 201) {
+            let memberId = response.data.memberId
+            console.log("Record inserted in Member Table of id :", memberId);
+
+            //Call address api to insert user's address
+
+            const requestData = {
+              memberId: memberId,
+              addLine1: phyAddLine1,
+              addLine2: phyAddLine2,
+              city: phyCity,
+              zipCode: phyZipCode,
+              postalAddLine1: postalAddLine1,
+              postalAddLine2: postalAddLine2,
+              postalCity: postalCity,
+              postalZipCode: postalZipCode,
+            };
+            //console.log(requestData);
+               
+            axios.post(baseurl + '/member/member-address', requestData, { headers })
+              .then((response ) => {
+                //console.log("status : ",response.status)
+                if(response.status == 201) {
+                  console.log("Record inserted in Address Table.");
+                console.log("Document data : ",documentData);
+                documentData.forEach((item) => {
+
+                    const formData = new FormData();
+                    formData.append('proofId',item.proofId);
+                    formData.append('memberId',memberId);
+
+                    console.log("path :" , item.proofPath);
+                    console.log(" name ",item.proofFileName);
+                    console.log("type :",item.proofFileType);
+
+                    formData.append('proofImage', item.proofImage);
+
+                
+                    console.log("formdata : ");
+                    console.log(formData._parts[1][1]);
+
+                    console.log(formData);
+
+                    const headers = { 
+                      'Content-Type': 'multipart/form-data',
+                      'Authorization': 'Bearer ' + token }
+
+                    axios.post(baseurl + '/member-proofs', formData, { headers })
+                      .then((response) => {
+
+                        if (response.status == 201) {
+                          showAlert('Pass Request Success', 'Your Pass request is done successfully. You will receive an email, when admin will approve your pass request with Virtual Pass.');
+                      } else {
+                          showSweetAlert('error', 'Network Error', errorMessage);
+                      }
+                      })
+                      .catch((error) => {
+                        console.log(error);
+                        console.log(error.response);
+                        showAlert('error','Failed to add proof details of user. Please try again...');  
+                    });
+                  });
+                  
+                }
+                else{
+                  showAlert('Network Error', 'Oops! Something went wrong. Please try again later.');
+                }
+            })
+            .catch((error) => {
+                showAlert('error','Failed to add address details of user. Please try again...');  
+            });
+          }
+          else
+          {
+            showAlert('Network Error','Something went wrong Please Try Again.');  
+          }
+          setUserId(0);
+          setMemberTypeId(0);
+          setFirstName('');
+          setLastName('');
+          setGender('female');
+          setMobileNo('');
+          setDob('');
+        })
+        .catch((error) => {
+          //setLoading(false);
+          showAlert('Error','Failed to add user personal detail. Please try again...');
+      })
+
+    }
+  }
+
+  // console.log('documentData in render');
+  // console.log(documentData);
   return (
       <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FE6666" barStyle="light-content" />
@@ -208,7 +433,7 @@ const PassScreen = ({navigation}) => {
               size={20}
             />
             <TextInput
-              placeholder="Your First Name"
+              placeholder="Your Last Name"
               style={styles.textInput}
               autoCapitalize="none"
               onChangeText={(val) => setLastName(val)}
@@ -226,6 +451,31 @@ const PassScreen = ({navigation}) => {
               </Animatable.View>
               : null}
           </View>
+
+          <Text style={[styles.text_footer, { marginTop:20 }]}>Gender</Text>
+          <View style={styles.action}>
+            {/* <FontAwesome
+              name="mars"
+              color="#000000"
+              size={20}
+              style={{marginTop:10}}
+            /> */}
+            <RadioButton
+                value="Female"
+                label="Female"
+                status={ gender === 'Female' ? 'checked' : 'unchecked' }
+                onPress={() => setGender('Female')}
+                
+              />
+              <Text style={{fontSize:16, marginTop:-5, padding:10}}>Female</Text>
+            <RadioButton
+                value="Male"
+                label="Male"
+                status={ gender === 'Male' ? 'checked' : 'unchecked' }
+                onPress={() => setGender('Male')}
+            />
+            <Text style={{fontSize:16, marginTop:-5, padding:10}}>Male</Text>
+          </View>
           
 
           <Text style={[styles.text_footer, { marginTop:20 }]}>Mobile Number</Text>
@@ -242,7 +492,7 @@ const PassScreen = ({navigation}) => {
               onChangeText={(val) => {setMobileNo(val)}}
               value={mobileNo}
               keyboardType="number-pad"
-              maxLength={15}
+              maxLength={10}
              />
           </View>
 
@@ -276,7 +526,7 @@ const PassScreen = ({navigation}) => {
             </View>
             
 
-          <Text style={[styles.text_footer, { marginTop:20 }]}>Physical Address</Text>
+          <Text style={[styles.text_footer, { marginTop:20 }]}>Permanent Address</Text>
           <View style={styles.action}>
             <FontAwesome
               name="address-book-o"
@@ -384,7 +634,7 @@ const PassScreen = ({navigation}) => {
             status={checked ? 'checked' : 'unchecked'}
             color="#FE6666"
             uncheckedColor="#bdc4ca"
-            label="Same As Physical"
+            label="Same As Permanent Address"
             onPress={() => {
               setChecked(!checked);
               console.log(checked);
@@ -496,7 +746,6 @@ const PassScreen = ({navigation}) => {
               : null}
           </View>
 
-          
           <Text style={[styles.text_footer, { marginTop:25 }]}>User Type</Text>
           <View style={styles.action}>
             <Dropdown
@@ -508,22 +757,67 @@ const PassScreen = ({navigation}) => {
             />
           </View>
 
-          <Text style={[styles.text_footer, { marginTop:25 }]}>Documents</Text>
-          <View style={styles.action}>
-            <Dropdown
-              label="Select Documents"
-              data={documentData}
-              enableSearch
-              value={documentId}
-              onChange={onChangeDocument}
-            />
-          </View>
-       
+        <Text style={[styles.text_footer, { marginTop:25 }]}>Upload Documents</Text>
+         
+          {
+            documentData && documentData.map((item, index) => {
+              return(
+                <View style={[styles.cardlist]} key={item.proofId} >
+                <Text style={[styles.carditem, { width: '200%'}]}>{item.proofName}
+                {
+                  item.proofPath != '' && 
+                  (
+                    <Avatar
+                      size={40}
+                      source={{
+                        uri: item.proofPath
+                      }}
+                      icon={{name: 'file', color: '#FE6666', type: 'font-awesome'}}
+                      activeOpacity={0.7}
+                    />
+                  ) 
+                  
+                }
+                  <TouchableOpacity 
+                    style={{paddingTop: 10}}
+                    onPress={ () => openDocumentFile(item.proofId)}
+                  >             
+                    <Animatable.View
+                      animation="bounceIn"
+                      >
+                      <Feather
+                        name="image"
+                        color="#FE6666"
+                        size={25}
+                      />
+                    </Animatable.View>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={{paddingTop: 10}}
+                    onPress={ () => cancelDocumentFile(item.proofId) }  
+                  >
+                    <Animatable.View
+                      animation="bounceIn"
+                    >
+                      <Feather
+                        name="x-square"
+                        color="#FE6666"
+                        size={25}
+                      />
+                    </Animatable.View>
+                  </TouchableOpacity>
+                
+                </Text>
+                </View> 
+              )
+            })
+          }
+          
           <View style={{ marginTop: 50 }}></View>
 
           <View style={styles.button}>
             <TouchableOpacity
-              //onPress={handleSignIn}
+              onPress={passRequesthandler}
               style={[styles.signIn, {
                 borderColor: '#FE6666',
                 borderWidth: 2,
@@ -585,7 +879,9 @@ const styles = StyleSheet.create({
       flex: 1,
       marginTop: Platform.OS === 'ios' ? 0 : -12,
       paddingLeft: 10,
-      color: '#000000'
+      color: '#000000',
+      borderBottomColor: "#bdc4ca",
+      borderBottomWidth:0.5
   },
   errorMsg: {
       color: '#FF0000',
@@ -605,6 +901,17 @@ const styles = StyleSheet.create({
   textSign: {
       fontSize: 18,
       fontWeight: 'bold'
+  },
+  cardlist: {
+    display: "flex",
+    flexDirection: "row",
+    marginTop: 10
+  },
+  carditem: {
+    backgroundColor: '#eeeff1',
+    paddingLeft: 20,
+    paddingBottom: 20,
+    fontSize:16
   }
 
 });

@@ -59,7 +59,7 @@ const PackageScreen = ({navigation}) => {
             <View style={styles.action}>
               <FontAwesome
                 name="calendar"
-                color="#000000"
+                color="#FE6666"
                 size={20}
               />
               <TextInput
@@ -85,7 +85,7 @@ const PackageScreen = ({navigation}) => {
             <View style={styles.action}>
             <FontAwesome
               name="money"
-              color="#000000"
+              color="#FE6666"
               size={20}
             />
               <TextInput

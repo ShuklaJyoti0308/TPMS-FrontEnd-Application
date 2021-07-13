@@ -1,25 +1,83 @@
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
+
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
+
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { baseurl } from '../config';
 
 import HomeScreen from './HomeScreen';
 import PassScreen from './PassScreen';
 import PackageScreen from './PackageScreen';
 import TransportHistoryScreen from './TransportHistoryScreen';
 import ProfileScreen from './ProfileScreen';
+import ViewPassScreen from './ViewPassScreen';
 
 const HomeStack = createStackNavigator();
 const PassStack = createStackNavigator();
 const PackageStack = createStackNavigator();
 const TransportHistoryStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
+const ViewPassStack = createStackNavigator();
 
 
 const Tab = createMaterialBottomTabNavigator();
 
-const MainTabScreen = () => (
-  <Tab.Navigator
+const MainTabScreen = () => {
+
+  const [userId, setUserId] = useState(0);
+  const [token, setToken] = React.useState('');
+  const [passRequest, setPassRequest]= useState(false);
+ 
+
+  useEffect(async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    setToken(token);
+    let userId = await AsyncStorage.getItem('id');
+    userId = parseInt(userId);
+    setUserId(userId);
+    displayPassStatus(userId, token);
+  },[]);
+
+  const showAlert = (title, message) => {
+    Alert.alert(title, message, [
+      {text: 'Okay'}
+    ]);
+  }
+
+
+  const displayPassStatus = (userId, token) => {
+    if(userId == 0)
+    {
+      return;
+    }
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/member/' + userId,{ headers })
+      .then((response) => {
+        console.log("res: ", response.status);
+        console.log("Maintab res data : ", response.data);
+        if(response.status == 200) {
+            setPassRequest(true);  
+        }  
+        else
+        {
+          showAlert('error', 'Fail to show pass.');
+        }  
+        
+      })
+      .catch((error) => {
+         setLoading(false);
+        setRefreshing(false);
+        showAlert('error', 'Network Error.');
+      });
+  }
+
+  return(
+    <Tab.Navigator
       initialRouteName="Home"
       activeColor="#fff"
       inactiveColor="#fff"
@@ -36,17 +94,35 @@ const MainTabScreen = () => (
           ),
         }}
       />
-      <Tab.Screen
-        name="Pass"
-        component={PassStackScreen}
-        options={{
-          tabBarLabel: 'Pass',
-          tabBarColor: '#FE6666',
-          tabBarIcon: ({ color }) => (
-            <Icon name="ios-bus" color={color} size={26} />
-          ),
-        }}
-      />
+      { (passRequest==true) ? 
+        (
+          <Tab.Screen
+            name="View Pass"
+            component={ViewPassStackScreen}
+            options={{
+              tabBarLabel: 'View Pass',
+              tabBarColor: '#FE6666',
+              tabBarIcon: ({ color }) => (
+                <Icon name="ios-menu" color={color} size={26} />
+              ),
+            }}
+          />
+
+        ) : 
+        ( <Tab.Screen
+            name="Pass"
+            component={PassStackScreen}
+            options={{
+              tabBarLabel: 'Pass',
+              tabBarColor: '#FE6666',
+              tabBarIcon: ({ color }) => (
+                <Icon name="ios-bus" color={color} size={26} />
+              ),
+            }}
+          />
+        ) 
+      }
+      
       <Tab.Screen
         name="Package"
         component={PackageStackScreen}
@@ -54,7 +130,7 @@ const MainTabScreen = () => (
           tabBarLabel: 'Package',
           tabBarColor: '#FE6666',
           tabBarIcon: ({ color }) => (
-            <Icon name="ios-train-outline" color={color} size={26} />
+            <Icon name="ios-pricetags" color={color} size={26} />
           ),
         }}
       />
@@ -80,7 +156,10 @@ const MainTabScreen = () => (
         }}
       />
     </Tab.Navigator>
-);
+  )
+
+}  
+  
 
 export default MainTabScreen;
 
@@ -120,6 +199,25 @@ const PassStackScreen = ({navigation}) => (
           )
         }} />
   </PassStack.Navigator>
+);
+
+const ViewPassStackScreen = ({navigation}) => (
+  <ViewPassStack.Navigator screenOptions={{
+        headerStyle: {
+          backgroundColor: "#FE6666"
+        },
+        headerTintColor: "#fff",
+        headerTitleStyle: {
+          fontWeight: "600"
+        }
+      }}>
+     <ViewPassStack.Screen name="View Pass" component={ViewPassScreen} options={{
+          title: 'View Pass',
+          headerLeft: () => (
+            <Icon.Button name="ios-arrow-back" size={25} iconStyle={{marginRight:0}} backgroundColor="#FE6666" onPress={() => navigation.goBack()}></Icon.Button>
+          )
+        }} />
+  </ViewPassStack.Navigator>
 );
 
 const PackageStackScreen = ({navigation}) => (

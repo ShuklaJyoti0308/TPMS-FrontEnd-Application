@@ -34,6 +34,7 @@ const PassScreen = ({navigation}) => {
     const [gender, setGender] = useState('Female');
     const [mobileNo, setMobileNo] = useState('');
     const [profileImage, setProfileImage] = useState('C:\JYOTI_INTERN\TPMS_Data');
+    
 
     const [dob, setDob] = useState('');
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -278,6 +279,7 @@ const PassScreen = ({navigation}) => {
     {
       //setLoading(true);
       
+      let requestDate = new Date().getDate();
       const reqData = {
         userId: userId,
         memberTypeId: memberTypeId,
@@ -286,7 +288,8 @@ const PassScreen = ({navigation}) => {
         gender: gender,
         mobileNo: mobileNo,
         dob: dob,
-        profileImage: profileImage
+        profileImage: profileImage,
+        requestDate: requestDate
       };
 
       const headers = { 'Authorization': 'Bearer ' + token }

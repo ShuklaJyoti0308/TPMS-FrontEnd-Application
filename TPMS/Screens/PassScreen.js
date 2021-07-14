@@ -27,6 +27,7 @@ import {baseurl} from '../config';
 import axios from 'axios';
 import { Avatar } from "react-native-elements";
 
+
 const PassScreen = ({navigation}) => {
 
     const [firstName, setFirstName] = useState('');
@@ -34,6 +35,7 @@ const PassScreen = ({navigation}) => {
     const [gender, setGender] = useState('Female');
     const [mobileNo, setMobileNo] = useState('');
     const [profileImage, setProfileImage] = useState('C:\JYOTI_INTERN\TPMS_Data');
+  
     
 
     const [dob, setDob] = useState('');
@@ -280,6 +282,7 @@ const PassScreen = ({navigation}) => {
       //setLoading(true);
       
       let requestDate = new Date().getDate();
+      console.log("Request Date :",requestDate);
       const reqData = {
         userId: userId,
         memberTypeId: memberTypeId,

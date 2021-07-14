@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, SafeAreaView, ScrollView, StyleSheet, RefreshControl,  ActivityIndicator, Alert } from 'react-native';
+import { Text, View, SafeAreaView, ScrollView, StyleSheet, RefreshControl,  ActivityIndicator, Alert, AppRegistry } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { baseurl } from '../config';
+import QRCode from 'react-native-qrcode-svg';
 
 const ViewPassScreen = ({navigation}) => {
 
@@ -97,7 +98,7 @@ const ViewPassScreen = ({navigation}) => {
         />
         }
       >
-    {/* {loading == true && (<ActivityIndicator size="large" color="#bdc4ca" />)} */}
+     {loading == true && (<ActivityIndicator size="large" color="#bdc4ca" />)} 
 
       {
         (passApproval==false) ? 
@@ -135,22 +136,29 @@ const ViewPassScreen = ({navigation}) => {
           <View style={styles.userInfoSection}>
             <View style={styles.row}>
               <Icon name="card-account-details" color="#FE6666" size={25} />
-              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Serial No</Text>
-              <Text style={{ color: "#000000", marginLeft: 90, fontSize: 16 }}>{passData.serialNo}</Text>      
+              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>PASS No</Text>
+              <Text style={{ color: "#000000", marginLeft: 100, fontSize: 16 }}>{passData.serialNo}</Text>      
             </View>
             <View style={styles.row}>
               <Icon name="account-plus" color="#FE6666" size={25} />
-              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Holder Name</Text>
-              <Text style={{ color: "#000000", marginLeft: 60, fontSize: 16 }}>{passData.firstName} {passData.lastName}</Text>      
+              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>HOLDER NAME</Text>
+              <Text style={{ color: "#000000", marginLeft: 50, fontSize: 16 }}>{passData.firstName} {passData.lastName}</Text>      
             </View>
             <View style={styles.row}>
               <Icon name="calendar-clock" color="#FE6666" size={25} />
-              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Expiry Date</Text>
+              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>VALID THRU </Text>
               <Text style={{ color: "#000000", marginLeft: 70, fontSize: 16 }}>{passData.expiry}</Text>
             </View>
             <View style={styles.row}>
-              <Icon name="file-eye" color="#FE6666" size={25} />
-              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>QR Code</Text>
+              <Icon name="qrcode-scan" color="#FE6666" size={25} />
+              <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16, paddingRight:100}}>SCAN QR</Text>
+              <QRCode 
+                size={100}
+                value={passData.expiry}
+                bgColor='#000000'
+                fgColor="#fff"
+                marginLeft={80}
+              />
             </View>
           </View>
         )
@@ -161,6 +169,8 @@ const ViewPassScreen = ({navigation}) => {
   );
 };
 
+AppRegistry.registerComponent('TPMS', () => ViewPassScreen);
+
 export default ViewPassScreen;
 
 const styles = StyleSheet.create({
@@ -170,7 +180,7 @@ const styles = StyleSheet.create({
   userInfoSection: {
     padding: 10,
     marginTop: 10,
-   
+    
   },
   row: {
     flexDirection: 'row',

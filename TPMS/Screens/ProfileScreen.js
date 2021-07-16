@@ -96,9 +96,9 @@ const ProfileScreen = ({navigation}) => {
         
       })
       .catch((error) => {
-         setLoading(false);
+        setLoading(false);
         setRefreshing(false);
-        showAlert('error', 'Network Error.');
+        console.log(error);
       });
   }
 

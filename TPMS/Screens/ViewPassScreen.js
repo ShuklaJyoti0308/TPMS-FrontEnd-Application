@@ -154,7 +154,7 @@ const ViewPassScreen = ({navigation}) => {
               <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16, paddingRight:100}}>SCAN QR</Text>
               <QRCode 
                 size={100}
-                value={passData.expiry}
+                value = {[{data: passData.expiry, mode: 'alphanumeric'},{data: passData.serialNo, mode: 'numeric'}]}
                 bgColor='#000000'
                 fgColor="#fff"
                 marginLeft={80}

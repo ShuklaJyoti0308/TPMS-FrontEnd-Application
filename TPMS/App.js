@@ -85,6 +85,7 @@
        }catch(e){
          console.log(e);
        }
+       dispatch({ type: 'LOGOUT' });
      }
  
    }),[]);

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,6 +9,8 @@ import {
   StatusBar,
   ScrollView, 
   SafeAreaView,
+  RefreshControl,
+  ActivityIndicator,
   Alert  
 } from 'react-native';
 import {
@@ -16,31 +18,98 @@ import {
 } from 'sharingan-rn-modal-dropdown';
 import * as Animatable from 'react-native-animatable';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import Feather from 'react-native-vector-icons/Feather';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
 
 const PackageScreen = ({navigation}) => {
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#FE6666" barStyle="light-content" />
 
+  const [transportModeData, setTransportModeData] = useState({});
+  const [transportModeId, setTransportModeId] = useState(0);
+  const [data, setData] = useState([]);
+  //const [packageData, setPackageData] = useState({});
+  const [userId, setUserId] = useState(0);
+  
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState('');
+
+  useEffect(async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    setToken(token);
+    let userId = await AsyncStorage.getItem('id');
+    userId = parseInt(userId);
+    setUserId(userId);
+    displayTransportMode(token);
+  },[refreshing]);
+
+  const showAlert = (title, message) => {
+    Alert.alert(title, message, [
+      {text: 'Okay'}
+    ]);
+  }
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+  },[]);
+
+  const displayTransportMode = (token) => {
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/transport-modes', { headers })
+      .then(response => {
+        if (response.status == 200) {
+          setData(response.data);
+          let dt = response.data;
+          let arr = [];
+          for (let i = 0; i < dt.length; i++) {
+            arr.push({
+              value : dt[i].id,
+              label : dt[i].name
+            });
+          }
+          setTransportModeData(arr);
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        showAlert('error', 'Failed to get transport mode.');
+      })
+  }
+
+  const onChangeTransportMode = (value) => {
+    console.log("id of transport mode :" , value);
+      setTransportModeId(value);
+     
+    };
+  
+
+
+  return (
+    
+    <ScrollView keyboardShouldPersistTaps='handled'>
+    {/* <Spinner visible={loading} textContent='Loading...' textStyle={styles.spinnerTextStyle} /> */}
+    <View style={styles.container}>
+
+      <StatusBar  backgroundColor="#FE6666" barStyle="light-content" />  
         <Animatable.View 
           animation="fadeInUpBig"
           style={styles.footer}
         >
-        <ScrollView keyboardShouldPersistTaps='handled'> 
           
           <Text style={[styles.text_footer, { marginTop:25 }]}>Transport Mode</Text>
             <View style={styles.action}>
               <Dropdown
                 label="Select Transport Mode"
-                //data={memberTypeData}
+                data={transportModeData}
                 enableSearch
-                //value={memberTypeId}
-                //onChange={onChangeMemberType}
+                value={transportModeId}
+                onChange={onChangeTransportMode}
               />
             </View>
 
@@ -55,7 +124,7 @@ const PackageScreen = ({navigation}) => {
                 />
             </View>
 
-          <Text style={[styles.text_footer, { marginTop:10 }]}>Validity</Text>
+          <Text style={[styles.text_footer, { marginTop:25 }]}>Validity</Text>
             <View style={styles.action}>
               <FontAwesome
                 name="calendar"
@@ -69,19 +138,9 @@ const PackageScreen = ({navigation}) => {
                 // value={firstName}
                 maxLength={50}
               />
-            {/* {(firstName != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="grey"
-              />  
-              </Animatable.View>
-              : null} */}
-            </View>
+           </View>
           
-          <Text style={[styles.text_footer, { marginTop:10 }]}>Price</Text>
+          <Text style={[styles.text_footer, { marginTop:25 }]}>Price</Text>
             <View style={styles.action}>
             <FontAwesome
               name="money"
@@ -95,16 +154,6 @@ const PackageScreen = ({navigation}) => {
                 // value={firstName}
                 maxLength={50}
               />
-            {/* {(firstName != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="grey"
-              />  
-              </Animatable.View>
-              : null} */}
             </View>
 
           <View style={{ marginTop: 50 }}></View>
@@ -124,10 +173,9 @@ const PackageScreen = ({navigation}) => {
             </TouchableOpacity>
           </View>
           
-        </ScrollView>
-      </Animatable.View>
-    </SafeAreaView>
-
+        </Animatable.View>
+      </View>
+    </ScrollView>
   );
 };
 

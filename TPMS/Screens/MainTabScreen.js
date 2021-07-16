@@ -65,14 +65,13 @@ const MainTabScreen = () => {
         }  
         else
         {
-          showAlert('error', 'Fail to show pass.');
+          showAlert('error', 'Failed to show pass.');
         }  
         
       })
       .catch((error) => {
-         setLoading(false);
-        setRefreshing(false);
-        showAlert('error', 'Network Error.');
+        console.log(error.response);
+        //showAlert('error', 'Network Error.');
       });
   }
 

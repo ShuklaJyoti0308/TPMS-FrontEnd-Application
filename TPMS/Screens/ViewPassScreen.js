@@ -10,7 +10,6 @@ const ViewPassScreen = ({navigation}) => {
 
   const [userId, setUserId] = useState(0);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [loading, setLoading] = useState(true);
   const [token, setToken] = useState('');
   const [passApproval, setPassApproval] = useState(false);
   const [requestData, setRequestData] = useState([]);

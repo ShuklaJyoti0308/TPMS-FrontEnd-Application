@@ -95,14 +95,13 @@ const PackageScreen = ({navigation}) => {
     <ScrollView keyboardShouldPersistTaps='handled'>
     {/* <Spinner visible={loading} textContent='Loading...' textStyle={styles.spinnerTextStyle} /> */}
     <View style={styles.container}>
-
       <StatusBar  backgroundColor="#FE6666" barStyle="light-content" />  
         <Animatable.View 
           animation="fadeInUpBig"
           style={styles.footer}
         >
           
-          <Text style={[styles.text_footer, { marginTop:25 }]}>Transport Mode</Text>
+          <Text style={[styles.text_footer, { marginTop:5 }]}>Transport Mode</Text>
             <View style={styles.action}>
               <Dropdown
                 label="Select Transport Mode"
@@ -113,10 +112,21 @@ const PackageScreen = ({navigation}) => {
               />
             </View>
 
-          <Text style={[styles.text_footer, { marginTop:25 }]}>Package</Text>
+          <Text style={[styles.text_footer, { marginTop:25 }]}>Package Name</Text>
             <View style={styles.action}>
               <Dropdown
                   label="Select Package"
+                  //data={memberTypeData}
+                  enableSearch
+                  //value={memberTypeId}
+                  //onChange={onChangeMemberType}
+                />
+            </View>
+
+            <Text style={[styles.text_footer, { marginTop:25 }]}>Package Type</Text>
+            <View style={styles.action}>
+              <Dropdown
+                  label="Select subscrption Type"
                   //data={memberTypeData}
                   enableSearch
                   //value={memberTypeId}
@@ -207,11 +217,12 @@ const styles = StyleSheet.create({
   },
   text_footer: {
       color: '#000000',
-      fontSize: 18
+      fontSize: 16,
+      fontWeight: 'bold'
   },
   action: {
       flexDirection: 'row',
-      marginTop: 10,
+      marginTop: 2,
       borderBottomWidth: 1,
       borderBottomColor: '#f2f2f2',
       paddingBottom: 5

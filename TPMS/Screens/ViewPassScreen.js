@@ -106,17 +106,17 @@ const ViewPassScreen = ({navigation}) => {
           <View style={styles.userInfoSection}>
           <View style={styles.row}>
             <Icon name="card-account-details" color="#FE6666" size={25} />
-            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Request Id</Text>
+            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16, fontWeight:'bold' }}>Request Id</Text>
             <Text style={{ color: "#000000", marginLeft: 70, fontSize: 16 }}>{requestData.memberId}</Text>      
           </View>
           <View style={styles.row}>
             <Icon name="calendar-clock" color="#FE6666" size={25} />
-            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Request Date</Text>
+            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16, fontWeight:'bold' }}>Request Date</Text>
             <Text style={{ color: "#000000", marginLeft: 50, fontSize: 16 }}>{requestData.requestDate}</Text>
           </View>
           <View style={styles.row}>
             <Icon name="format-list-checks" color="#FE6666" size={25} />
-            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Pass Status</Text>
+            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16, fontWeight:'bold' }}>Pass Status</Text>
             {
               (requestData.status==2) ? 
                 (<Text style={{ color: "#000000", marginLeft: 60, fontSize: 16 }}>Disapproved</Text>) 
@@ -127,7 +127,7 @@ const ViewPassScreen = ({navigation}) => {
           </View>
           <View style={styles.row}>
             <Icon name="tooltip-edit" color="#FE6666" size={25} />
-            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16 }}>Edit</Text>
+            <Text style={{ color: "#000000", marginLeft: 20, fontSize: 16, fontWeight:'bold' }}>Edit</Text>
           </View>
          
         </View>

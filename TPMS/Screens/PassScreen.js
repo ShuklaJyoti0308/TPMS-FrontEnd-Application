@@ -29,6 +29,7 @@ import { Avatar } from "react-native-elements";
 import Spinner from 'react-native-loading-spinner-overlay';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from "moment";
+import ViewPassScreen from './ViewPassScreen';
 
 const PassScreen = ({navigation}) => {
 
@@ -66,6 +67,8 @@ const PassScreen = ({navigation}) => {
     const [memberId, setMemberId] = useState(0);
     const [userName, setUserName] = useState('');
 
+    const [passRequest, setPassRequest]= useState(false);
+
     useEffect(async() => {
       const token = await AsyncStorage.getItem('jwtToken');
       setToken(token);
@@ -74,6 +77,7 @@ const PassScreen = ({navigation}) => {
       console.log("User id :" + userId);
       setUserId(userId);
 
+      displayPassStatus(userId, token);
       getUsername(userId,token);
       displayMemberType(token);
 
@@ -85,7 +89,31 @@ const PassScreen = ({navigation}) => {
       
     }, []);  
 
-
+    const displayPassStatus = (userId, token) => {
+      if(userId == 0)
+      {
+        return;
+      }
+      const headers = { 'Authorization': 'Bearer ' + token };
+      axios.get(baseurl + '/member/' + userId,{ headers })
+        .then((response) => {
+          console.log("res: ", response.status);
+          console.log("Maintab res data : ", response.data);
+          if(response.status == 200) {
+              setPassRequest(true);  
+          }  
+          else
+          {
+            showAlert('error', 'Failed to show pass.');
+          }  
+          
+        })
+        .catch((error) => {
+          console.log(error.response);
+          //showAlert('error', 'Network Error.');
+        });
+    }
+  
     const getUsername = (userId,token) => {
     
       const headers = { 'Authorization': 'Bearer ' + token }
@@ -393,7 +421,8 @@ const PassScreen = ({navigation}) => {
                               setLoading(false);
                               console.log("status code of mail success:",response.status);
                               if(response.status == 200) {
-                                showAlert('Success', 'Your Pass request is done successfully. You will receive an email, when admin will approve your pass request');
+                                showAlert('Pass Request Success', 'Your Pass request has been placed successfully. You will receive an email from TPMS team after approval of pass request');
+                                setPassRequest(true);
                               }
                             })
                             .catch((error) => {
@@ -458,6 +487,9 @@ const PassScreen = ({navigation}) => {
 
   // console.log('documentData in render');
   // console.log(documentData);
+  if(passRequest==true){
+    return <ViewPassScreen />
+  }
   return (
       <ScrollView keyboardShouldPersistTaps="handled">
         <Spinner visible={loading} textContent="Loading..." animation="fade" textStyle={styles.spinnerTextStyle} />  
@@ -469,11 +501,11 @@ const PassScreen = ({navigation}) => {
             style={styles.footer}
           >
         
-            <Text style={[styles.text_footer, { marginTop:10 }]}>First Name</Text>
+            <Text style={[styles.text_footer, { marginTop:5 }]}>First Name</Text>
               <View style={styles.action}>
                 <FontAwesome
                   name="user-o"
-                  color="#000000"
+                  color="#FE6666"
                   size={20}
                 />
                 <TextInput
@@ -500,7 +532,7 @@ const PassScreen = ({navigation}) => {
               <View style={styles.action}>
                 <FontAwesome
                   name="user-o"
-                  color="#000000"
+                  color="#FE6666"
                   size={20}
                 />
                 <TextInput
@@ -547,8 +579,8 @@ const PassScreen = ({navigation}) => {
               <View style={styles.action}>
                 <FontAwesome
                   name="mobile"
-                  color="#000000"
-                  size={20}
+                  color="#FE6666"
+                  size={25}
                 />
                 <TextInput
                   placeholder="Your Mobile Number"
@@ -595,7 +627,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -620,7 +652,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -645,7 +677,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -671,7 +703,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -712,7 +744,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -737,7 +769,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -762,7 +794,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -788,7 +820,7 @@ const PassScreen = ({navigation}) => {
                 <View style={styles.action}>
                   <FontAwesome
                     name="address-book-o"
-                    color="#000000"
+                    color="#FE6666"
                     size={20}
                   />
                   <TextInput
@@ -896,7 +928,7 @@ const PassScreen = ({navigation}) => {
 
               </View> 
             
-              <View style={{ marginTop: 50 }}></View>
+              <View style={{ marginTop: 10 }}></View>
         
             </Animatable.View>
           </View>
@@ -932,11 +964,12 @@ const styles = StyleSheet.create({
   },
   text_footer: {
       color: '#000000',
-      fontSize: 18
+      fontSize: 16,
+      fontWeight: 'bold'
   },
   action: {
       flexDirection: 'row',
-      marginTop: 10,
+      marginTop: 8,
       borderBottomWidth: 1,
       borderBottomColor: '#f2f2f2',
       paddingBottom: 5

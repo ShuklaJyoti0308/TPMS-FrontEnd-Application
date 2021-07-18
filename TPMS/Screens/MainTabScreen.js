@@ -6,10 +6,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { baseurl } from '../config';
-
 import HomeScreen from './HomeScreen';
 import PassScreen from './PassScreen';
 import PackageScreen from './PackageScreen';
@@ -29,51 +25,10 @@ const Tab = createMaterialBottomTabNavigator();
 
 const MainTabScreen = () => {
 
-  const [userId, setUserId] = useState(0);
-  const [token, setToken] = React.useState('');
-  const [passRequest, setPassRequest]= useState(false);
- 
-
-  useEffect(async () => {
-    const token = await AsyncStorage.getItem('jwtToken');
-    setToken(token);
-    let userId = await AsyncStorage.getItem('id');
-    userId = parseInt(userId);
-    setUserId(userId);
-    displayPassStatus(userId, token);
-  },[]);
-
   const showAlert = (title, message) => {
     Alert.alert(title, message, [
       {text: 'Okay'}
     ]);
-  }
-
-
-  const displayPassStatus = (userId, token) => {
-    if(userId == 0)
-    {
-      return;
-    }
-    const headers = { 'Authorization': 'Bearer ' + token };
-    axios.get(baseurl + '/member/' + userId,{ headers })
-      .then((response) => {
-        console.log("res: ", response.status);
-        console.log("Maintab res data : ", response.data);
-        if(response.status == 200) {
-            setPassRequest(true);  
-        }  
-        else
-        {
-          showAlert('error', 'Fail to show pass.');
-        }  
-        
-      })
-      .catch((error) => {
-         setLoading(false);
-        setRefreshing(false);
-        showAlert('error', 'Network Error.');
-      });
   }
 
   return(
@@ -94,34 +49,19 @@ const MainTabScreen = () => {
           ),
         }}
       />
-      { (passRequest==true) ? 
-        (
-          <Tab.Screen
-            name="View Pass"
-            component={ViewPassStackScreen}
-            options={{
-              tabBarLabel: 'View Pass',
-              tabBarColor: '#FE6666',
-              tabBarIcon: ({ color }) => (
-                <Icon name="ios-menu" color={color} size={26} />
-              ),
-            }}
-          />
 
-        ) : 
-        ( <Tab.Screen
-            name="Pass"
-            component={PassStackScreen}
-            options={{
-              tabBarLabel: 'Pass',
-              tabBarColor: '#FE6666',
-              tabBarIcon: ({ color }) => (
-                <Icon name="ios-bus" color={color} size={26} />
-              ),
-            }}
-          />
-        ) 
-      }
+      <Tab.Screen
+          name="Pass"
+          component={PassStackScreen}
+          options={{
+          tabBarLabel: 'Pass',
+          tabBarColor: '#FE6666',
+          tabBarIcon: ({ color }) => (
+           <Icon name="ios-card" color={color} size={26} />
+            ),
+          }}
+        />
+        
       
       <Tab.Screen
         name="Package"

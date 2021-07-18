@@ -26,7 +26,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
 import { Avatar } from "react-native-elements";
-
+import Spinner from 'react-native-loading-spinner-overlay';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import moment from "moment";
+import ViewPassScreen from './ViewPassScreen';
 
 const PassScreen = ({navigation}) => {
 
@@ -35,7 +38,7 @@ const PassScreen = ({navigation}) => {
     const [gender, setGender] = useState('Female');
     const [mobileNo, setMobileNo] = useState('');
     const [profileImage, setProfileImage] = useState('C:\JYOTI_INTERN\TPMS_Data');
-  
+    const [requestDate, setRequestDate] = useState('');
     
 
     const [dob, setDob] = useState('');
@@ -58,10 +61,13 @@ const PassScreen = ({navigation}) => {
     const [data, setData] = useState([]);
     
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [token, setToken] = useState('');
     const [userId, setUserId] = useState(0);
     const [memberId, setMemberId] = useState(0);
+    const [userName, setUserName] = useState('');
+
+    const [passRequest, setPassRequest]= useState(false);
 
     useEffect(async() => {
       const token = await AsyncStorage.getItem('jwtToken');
@@ -71,8 +77,64 @@ const PassScreen = ({navigation}) => {
       console.log("User id :" + userId);
       setUserId(userId);
 
+      displayPassStatus(userId, token);
+      getUsername(userId,token);
       displayMemberType(token);
+
+      var date = new Date() //Current Date
+      let fDate=date.getDate() + "-" + parseInt(date.getMonth()+1) + "-" + date.getFullYear();
+      var currentDate = moment().format('YYYY-MM-DD');
+      console.log("current date:",currentDate)
+      setRequestDate(currentDate);
+      
     }, []);  
+
+    const displayPassStatus = (userId, token) => {
+      if(userId == 0)
+      {
+        return;
+      }
+      const headers = { 'Authorization': 'Bearer ' + token };
+      axios.get(baseurl + '/member/' + userId,{ headers })
+        .then((response) => {
+          console.log("res: ", response.status);
+          console.log("Maintab res data : ", response.data);
+          if(response.status == 200) {
+              setPassRequest(true);  
+          }  
+          else
+          {
+            showAlert('error', 'Failed to show pass.');
+          }  
+          
+        })
+        .catch((error) => {
+          console.log(error.response);
+          //showAlert('error', 'Network Error.');
+        });
+    }
+  
+    const getUsername = (userId,token) => {
+    
+      const headers = { 'Authorization': 'Bearer ' + token }
+      axios.get(baseurl + '/users/' + userId, { headers })
+        .then((response) => {
+        //console.log("res: ", response.status);
+        console.log("username data  : ", response.data);
+        if(response.status == 200) {
+          console.log("username : ",response.data[0].userName);
+          setUserName(response.data[0].userName); 
+        }  
+        else
+        {
+          showAlert('error', 'Network Error. Please try again...');
+        }
+        })
+        .catch(error => {
+          showAlert('error', 'Failed to get username.');
+        })
+    }
+  
   
     const showAlert = (title, message) => {
       Alert.alert(title, message, [
@@ -157,7 +219,7 @@ const PassScreen = ({navigation}) => {
     
 
   const displayMemberType = (token) => {
-    console.log('Token : ' + token);
+    
     const headers = { 'Authorization': 'Bearer ' + token }
     axios.get(baseurl + '/member-types', { headers })
       .then(response => {
@@ -179,13 +241,13 @@ const PassScreen = ({navigation}) => {
         }
       })
       .catch(error => {
-        showAlert('error', 'Network Error.');
+        showAlert('error', 'Failed to get user types, Try after sometimes.');
       })
   }
 
   const displayDocument = (memberTypeId) => {
-    const headers = { 'Authorization': 'Bearer ' + token }
     setLoading(true);
+    const headers = { 'Authorization': 'Bearer ' + token }
     axios.get(baseurl + '/proofs/member-types/' + memberTypeId , { headers })
       .then(response => {
         setLoading(false);
@@ -210,7 +272,7 @@ const PassScreen = ({navigation}) => {
       })
       .catch(error => {
         setLoading(false);
-        showAlert('error', 'Network Error.');
+        showAlert('error', 'Failed to show documents to be upload, Try Again.');
       })
   }
 
@@ -274,15 +336,15 @@ const PassScreen = ({navigation}) => {
     else if ( postalCity.length==0 ) {
       showAlert('Wrong Input!', 'Please enter city of postal address to proceed.');
     }
-    // else if ( memberTypeId==0 ) {
-    //   showAlert('Wrong Input!', 'Please select user type to proceed.');
-    // }
+     else if ( memberTypeId==0 ) {
+       showAlert('Wrong Input!', 'Please select user type to proceed.');
+     }
     else
     {
-      //setLoading(true);
+      setLoading(true);
       
-      let requestDate = new Date().getDate();
-      console.log("Request Date :",requestDate);
+
+      console.log("request date : ",requestDate);
       const reqData = {
         userId: userId,
         memberTypeId: memberTypeId,
@@ -350,13 +412,32 @@ const PassScreen = ({navigation}) => {
                     axios.post(baseurl + '/member-proofs', formData, { headers })
                       .then((response) => {
 
-                        if (response.status == 201) {
-                          showAlert('Pass Request Success', 'Your Pass request is done successfully. You will receive an email, when admin will approve your pass request with Virtual Pass.');
+                      if (response.status == 201) {
+                            const headers = { 
+                            'Content-Type': 'text/plain',
+                            'Authorization': 'Bearer ' + token }
+                          axios.post(baseurl + '/pass-request-email', userName, { headers })
+                            .then((response) => {
+                              setLoading(false);
+                              console.log("status code of mail success:",response.status);
+                              if(response.status == 200) {
+                                showAlert('Pass Request Success', 'Your Pass request has been placed successfully. You will receive an email from TPMS team after approval of pass request');
+                                setPassRequest(true);
+                              }
+                            })
+                            .catch((error) => {
+                              console.log(error);
+                              console.log(error.response);
+                              showAlert('error','Failed to send mail');  
+                          });
+
                       } else {
                           showSweetAlert('error', 'Network Error', errorMessage);
                       }
+                      
                       })
                       .catch((error) => {
+                        setLoading(false);
                         console.log(error);
                         console.log(error.response);
                         showAlert('error','Failed to add proof details of user. Please try again...');  
@@ -367,9 +448,18 @@ const PassScreen = ({navigation}) => {
                 else{
                   showAlert('Network Error', 'Oops! Something went wrong. Please try again later.');
                 }
+              setPhyAddLine1(''); 
+              setPhyAddLine2(''); 
+              setPhyZipCode('');
+              setPhyCity(''); 
+              setPostalAddLine1(''); 
+              setPostalAddLine2(''); 
+              setPostalZipCode('');
+              setPostalCity('');  
             })
             .catch((error) => {
-                showAlert('error','Failed to add address details of user. Please try again...');  
+              setLoading(false);
+              showAlert('error','Failed to add address details of user. Please try again...');  
             });
           }
           else
@@ -385,8 +475,11 @@ const PassScreen = ({navigation}) => {
           setDob('');
         })
         .catch((error) => {
-          //setLoading(false);
+          setLoading(false);
+          console.log(error);
+          console.log(error.response);
           showAlert('Error','Failed to add user personal detail. Please try again...');
+
       })
 
     }
@@ -394,453 +487,452 @@ const PassScreen = ({navigation}) => {
 
   // console.log('documentData in render');
   // console.log(documentData);
+  if(passRequest==true){
+    return <ViewPassScreen />
+  }
   return (
-      <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#FE6666" barStyle="light-content" />
-
-        <Animatable.View 
-          animation="fadeInUpBig"
-          style={styles.footer}
-        >
-        <ScrollView keyboardShouldPersistTaps='handled'>
-
-        <Text style={[styles.text_footer, { marginTop:10 }]}>First Name</Text>
-          <View style={styles.action}>
-            <FontAwesome
-              name="user-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Your First Name"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => setFirstName(val)}
-              value={firstName}
-              maxLength={50}
-             />
-            {(firstName != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          
-          <Text style={[styles.text_footer, { marginTop:20 }]}>Last Name</Text>
-          <View style={styles.action}>
-            <FontAwesome
-              name="user-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Your Last Name"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => setLastName(val)}
-              value={lastName}
-              maxLength={50}
-             />
-            {(lastName != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-
-          <Text style={[styles.text_footer, { marginTop:20 }]}>Gender</Text>
-          <View style={styles.action}>
-            {/* <FontAwesome
-              name="mars"
-              color="#000000"
-              size={20}
-              style={{marginTop:10}}
-            /> */}
-            <RadioButton
-                value="Female"
-                label="Female"
-                status={ gender === 'Female' ? 'checked' : 'unchecked' }
-                onPress={() => setGender('Female')}
-                
-              />
-              <Text style={{fontSize:16, marginTop:-5, padding:10}}>Female</Text>
-            <RadioButton
-                value="Male"
-                label="Male"
-                status={ gender === 'Male' ? 'checked' : 'unchecked' }
-                onPress={() => setGender('Male')}
-            />
-            <Text style={{fontSize:16, marginTop:-5, padding:10}}>Male</Text>
-          </View>
-          
-
-          <Text style={[styles.text_footer, { marginTop:20 }]}>Mobile Number</Text>
-          <View style={styles.action}>
-            <FontAwesome
-              name="mobile"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Your Mobile Number"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setMobileNo(val)}}
-              value={mobileNo}
-              keyboardType="number-pad"
-              maxLength={10}
-             />
-          </View>
-
-          <Text style={[styles.text_footer, { marginTop: 20 }]}>Date of Birth</Text>
-            <View style={styles.action}>
-              <TextInput
-                placeholder="Date"
-                style={styles.textInput}
-                autoCapitalize="none"
-                onChangeText={(val) => setDob(val)}
-                value={dob + ""}
-                maxLength={20}
-              />
-              <TouchableOpacity onPress={showDatePicker}>
-                <Animatable.View
-                  animation="bounceIn"
-                >
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <Spinner visible={loading} textContent="Loading..." animation="fade" textStyle={styles.spinnerTextStyle} />  
+          <View style={styles.container}>    
+          <StatusBar backgroundColor="#FE6666" barStyle="light-content" /> 
+        
+          <Animatable.View 
+            animation="fadeInUpBig"
+            style={styles.footer}
+          >
+        
+            <Text style={[styles.text_footer, { marginTop:5 }]}>First Name</Text>
+              <View style={styles.action}>
+                <FontAwesome
+                  name="user-o"
+                  color="#FE6666"
+                  size={20}
+                />
+                <TextInput
+                  placeholder="Your First Name"
+                  style={styles.textInput}
+                  autoCapitalize="none"
+                  onChangeText={(val) => setFirstName(val)}
+                  value={firstName}
+                  maxLength={50}
+                />
+                {(firstName != '') ?
+                  <Animatable.View
+                    animation="bounceIn">
                   <Feather
-                    name="calendar"
+                    name="check-circle"
+                    size={20}
                     color="#FE6666"
-                    size={25}
-                  />
-                </Animatable.View>
-              </TouchableOpacity>
-              <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="date" 
-                onConfirm={handleConfirm}
-                onCancel={hideDatePicker}
-              />
-            </View>
-            
-
-          <Text style={[styles.text_footer, { marginTop:20 }]}>Permanent Address</Text>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Line 1"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPhyAddLine1(val)}}
-              value={phyAddLine1}
-              maxLength={50}
-             />
-             {(phyAddLine1 != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Line 2"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPhyAddLine2(val)}}
-              value={phyAddLine2}
-              maxLength={50}
-             />
-             {(phyAddLine2 != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Zip Code"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPhyZipCode(val)}}
-              value={phyZipCode}
-              keyboardType="number-pad"
-              maxLength={6}
-             />
-             {(phyZipCode != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="City"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPhyCity(val)}}
-              value={phyCity}
-              maxLength={30}
-             />
-             {(phyCity != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-
-          <Text style={[styles.text_footer, { marginTop:20}]}>Postal Address </Text>
-          <Checkbox.Item
-            status={checked ? 'checked' : 'unchecked'}
-            color="#FE6666"
-            uncheckedColor="#bdc4ca"
-            label="Same As Permanent Address"
-            onPress={() => {
-              setChecked(!checked);
-              console.log(checked);
-              if(!checked){ handlePostalAddress(); }
-              else{ clearPostalAddress(); }
+                  />  
+                  </Animatable.View>
+                  : null}
+              </View>
               
-            }}
-          />
+              <Text style={[styles.text_footer, { marginTop:20 }]}>Last Name</Text>
+              <View style={styles.action}>
+                <FontAwesome
+                  name="user-o"
+                  color="#FE6666"
+                  size={20}
+                />
+                <TextInput
+                  placeholder="Your Last Name"
+                  style={styles.textInput}
+                  autoCapitalize="none"
+                  onChangeText={(val) => setLastName(val)}
+                  value={lastName}
+                  maxLength={50}
+                />
+                {(lastName != '') ?
+                  <Animatable.View
+                    animation="bounceIn">
+                  <Feather
+                    name="check-circle"
+                    size={20}
+                    color="#FE6666"
+                  />  
+                  </Animatable.View>
+                  : null}
+              </View>
+
+              <Text style={[styles.text_footer, { marginTop:20 }]}>Gender</Text>
+              <View style={styles.action}>
+                <RadioButton
+                    value="Female"
+                    label="Female"
+                    status={ gender === 'Female' ? 'checked' : 'unchecked' }
+                    onPress={() => setGender('Female')}
+                    
+                  />
+                  <Text style={{fontSize:16, marginTop:-5, padding:10}}>Female</Text>
+                <RadioButton
+                    value="Male"
+                    label="Male"
+                    status={ gender === 'Male' ? 'checked' : 'unchecked' }
+                    onPress={() => setGender('Male')}
+                />
+                <Text style={{fontSize:16, marginTop:-5, padding:10}}>Male</Text>
+              </View>
           
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Line 1"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPostalAddLine1(val)}}
-              value={postalAddLine1}
-              maxLength={50}
-             />
-             {(postalAddLine1 != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Line 2"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPostalAddLine2(val)}}
-              value={postalAddLine2}
-              maxLength={50}
-            />
-            {(postalAddLine2 != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="Zip Code"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPostalZipCode(val)}}
-              value={postalZipCode}
-              keyboardType="number-pad"
-              maxLength={6}
-             />
-             {(postalZipCode != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
-          <View style={styles.action}>
-            <FontAwesome
-              name="address-book-o"
-              color="#000000"
-              size={20}
-            />
-            <TextInput
-              placeholder="City"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => {setPostalCity(val)}}
-              value={postalCity}
-              maxLength={30}
-            />
-            {(postalCity != '') ?
-              <Animatable.View
-                animation="bounceIn">
-              <Feather
-                name="check-circle"
-                size={20}
-                color="#FE6666"
-              />  
-              </Animatable.View>
-              : null}
-          </View>
 
-          <Text style={[styles.text_footer, { marginTop:25 }]}>User Type</Text>
-          <View style={styles.action}>
-            <Dropdown
-              label="Select User Type"
-              data={memberTypeData}
-              enableSearch
-              value={memberTypeId}
-              onChange={onChangeMemberType}
-            />
-          </View>
+              <Text style={[styles.text_footer, { marginTop:20 }]}>Mobile Number</Text>
+              <View style={styles.action}>
+                <FontAwesome
+                  name="mobile"
+                  color="#FE6666"
+                  size={25}
+                />
+                <TextInput
+                  placeholder="Your Mobile Number"
+                  style={styles.textInput}
+                  autoCapitalize="none"
+                  onChangeText={(val) => {setMobileNo(val)}}
+                  value={mobileNo}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                />
+              </View>
 
-        <Text style={[styles.text_footer, { marginTop:25 }]}>Upload Documents</Text>
-         
-          {
-            documentData && documentData.map((item, index) => {
-              return(
-                <View style={[styles.cardlist]} key={item.proofId} >
-                <Text style={[styles.carditem, { width: '200%'}]}>{item.proofName}
-                {
-                  item.proofPath != '' && 
-                  (
-                    <Avatar
-                      size={40}
-                      source={{
-                        uri: item.proofPath
-                      }}
-                      icon={{name: 'file', color: '#FE6666', type: 'font-awesome'}}
-                      activeOpacity={0.7}
-                    />
-                  ) 
-                  
-                }
-                  <TouchableOpacity 
-                    style={{paddingTop: 10}}
-                    onPress={ () => openDocumentFile(item.proofId)}
-                  >             
-                    <Animatable.View
-                      animation="bounceIn"
-                      >
-                      <Feather
-                        name="image"
-                        color="#FE6666"
-                        size={25}
-                      />
-                    </Animatable.View>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={{paddingTop: 10}}
-                    onPress={ () => cancelDocumentFile(item.proofId) }  
-                  >
+              <Text style={[styles.text_footer, { marginTop: 20 }]}>Date of Birth</Text>
+                <View style={styles.action}>
+                  <TextInput
+                    placeholder="Date"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => setDob(val)}
+                    value={dob + ""}
+                    maxLength={20}
+                  />
+                  <TouchableOpacity onPress={showDatePicker}>
                     <Animatable.View
                       animation="bounceIn"
                     >
                       <Feather
-                        name="x-square"
+                        name="calendar"
                         color="#FE6666"
                         size={25}
                       />
                     </Animatable.View>
                   </TouchableOpacity>
+                  <DateTimePickerModal
+                    isVisible={isDatePickerVisible}
+                    mode="date" 
+                    onConfirm={handleConfirm}
+                    onCancel={hideDatePicker}
+                  />
+                </View>
                 
-                </Text>
-                </View> 
-              )
-            })
-          }
+
+                <Text style={[styles.text_footer, { marginTop:20 }]}>Permanent Address</Text>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="Line 1"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPhyAddLine1(val)}}
+                    value={phyAddLine1}
+                    maxLength={50}
+                  />
+                  {(phyAddLine1 != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="Line 2"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPhyAddLine2(val)}}
+                    value={phyAddLine2}
+                    maxLength={50}
+                  />
+                  {(phyAddLine2 != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="Zip Code"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPhyZipCode(val)}}
+                    value={phyZipCode}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                  {(phyZipCode != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="City"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPhyCity(val)}}
+                    value={phyCity}
+                    maxLength={30}
+                  />
+                  {(phyCity != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+
+                <Text style={[styles.text_footer, { marginTop:20}]}>Postal Address </Text>
+                <Checkbox.Item
+                  status={checked ? 'checked' : 'unchecked'}
+                  color="#FE6666"
+                  uncheckedColor="#bdc4ca"
+                  label="Same As Permanent Address"
+                  onPress={() => {
+                    setChecked(!checked);
+                    console.log(checked);
+                    if(!checked){ handlePostalAddress(); }
+                    else{ clearPostalAddress(); }
+                    
+                  }}
+                />
           
-          <View style={{ marginTop: 50 }}></View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="Line 1"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPostalAddLine1(val)}}
+                    value={postalAddLine1}
+                    maxLength={50}
+                  />
+                  {(postalAddLine1 != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="Line 2"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPostalAddLine2(val)}}
+                    value={postalAddLine2}
+                    maxLength={50}
+                  />
+                  {(postalAddLine2 != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="Zip Code"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPostalZipCode(val)}}
+                    value={postalZipCode}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                  {(postalZipCode != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
+                <View style={styles.action}>
+                  <FontAwesome
+                    name="address-book-o"
+                    color="#FE6666"
+                    size={20}
+                  />
+                  <TextInput
+                    placeholder="City"
+                    style={styles.textInput}
+                    autoCapitalize="none"
+                    onChangeText={(val) => {setPostalCity(val)}}
+                    value={postalCity}
+                    maxLength={30}
+                  />
+                  {(postalCity != '') ?
+                    <Animatable.View
+                      animation="bounceIn">
+                    <Feather
+                      name="check-circle"
+                      size={20}
+                      color="#FE6666"
+                    />  
+                    </Animatable.View>
+                    : null}
+                </View>
 
-          <View style={styles.button}>
-            <TouchableOpacity
-              onPress={passRequesthandler}
-              style={[styles.signIn, {
-                borderColor: '#FE6666',
-                borderWidth: 2,
-                marginTop: 10
-                }]}
-            >
-            <Text style={[styles.textSign, {
-              color: '#FE6666'
-            }]}>SEND</Text>
-            </TouchableOpacity>
+                <Text style={[styles.text_footer, { marginTop:25 }]}>User Type</Text>
+                <View style={styles.action}>
+                  <Dropdown
+                    label="Select User Type"
+                    data={memberTypeData}
+                    enableSearch
+                    value={memberTypeId}
+                    onChange={onChangeMemberType}
+                  />
+                </View>
 
-        </View> 
-      
-          <View style={{ marginTop: 50 }}></View>
+                <Text style={[styles.text_footer, { marginTop:25 }]}>Upload Documents</Text>
+                
+                  {
+                    documentData && documentData.map((item, index) => {
+                      return(
+                        <View style={[styles.cardlist]} key={item.proofId} >
+                        <Text style={[styles.carditem, { width: '100%'}]}>{item.proofName}
+                        {
+                          item.proofPath != '' && 
+                          (
+                            <Avatar
+                              size={40}
+                              source={{
+                                uri: item.proofPath
+                              }}
+                              icon={{name: 'file', color: '#FE6666', type: 'font-awesome'}}
+                              activeOpacity={0.7}
+                            />
+                          ) 
+                          
+                        }
+                          <TouchableOpacity 
+                            style={{paddingTop: 10}}
+                            onPress={ () => openDocumentFile(item.proofId)}
+                          >             
+                            <Animatable.View
+                              animation="bounceIn"
+                              >
+                              <Feather
+                                name="image"
+                                color="#FE6666"
+                                size={25}
+                              />
+                            </Animatable.View>
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                            style={{paddingTop: 10}}
+                            onPress={ () => cancelDocumentFile(item.proofId) }  
+                          >
+                            <Animatable.View
+                              animation="bounceIn"
+                            >
+                              <Feather
+                                name="x-square"
+                                color="#FE6666"
+                                size={25}
+                              />
+                            </Animatable.View>
+                          </TouchableOpacity>
+                        
+                        </Text>
+                        </View> 
+                      )
+                    })
+                  }
+                  
+                <View style={{ marginTop: 50 }}></View>
+
+                <View style={styles.button}>
+                  <TouchableOpacity
+                    onPress={passRequesthandler}
+                    style={[styles.signIn, {
+                      borderColor: '#FE6666',
+                      borderWidth: 2,
+                      marginTop: 10
+                      }]}
+                  >
+                  <Text style={[styles.textSign, {
+                    color: '#FE6666'
+                  }]}>SEND</Text>
+                  </TouchableOpacity>
+
+              </View> 
+            
+              <View style={{ marginTop: 10 }}></View>
+        
+            </Animatable.View>
+          </View>
         </ScrollView>
-      </Animatable.View>
-    </SafeAreaView>
   );
 };
 
@@ -872,11 +964,12 @@ const styles = StyleSheet.create({
   },
   text_footer: {
       color: '#000000',
-      fontSize: 18
+      fontSize: 16,
+      fontWeight: 'bold'
   },
   action: {
       flexDirection: 'row',
-      marginTop: 10,
+      marginTop: 8,
       borderBottomWidth: 1,
       borderBottomColor: '#f2f2f2',
       paddingBottom: 5
@@ -917,8 +1010,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#eeeff1',
     paddingLeft: 20,
     paddingBottom: 20,
-    fontSize:16
-  }
+    fontSize:16,
+   
+  } 
 
 });
 

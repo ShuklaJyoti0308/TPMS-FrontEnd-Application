@@ -4,8 +4,6 @@ import {
   Text, 
   TouchableOpacity, 
   StyleSheet,
-  TextInput,
-  Platform,
   StatusBar,
   ScrollView, 
   SafeAreaView,
@@ -13,41 +11,37 @@ import {
   ActivityIndicator,
   Alert  
 } from 'react-native';
-
-import * as Animatable from 'react-native-animatable';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Spinner from 'react-native-loading-spinner-overlay';
-
+import * as Animatable from 'react-native-animatable';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
 
-const PackageScreen = ({navigation}) => {
 
-  const [transportModeData, setTransportModeData] = useState({});
-  const [transportModeId, setTransportModeId] = useState(0);
+const Tab = createMaterialTopTabNavigator();
+
+function ViewPackages(){
   const [data, setData] = useState([]);
-  //const [packageData, setPackageData] = useState({});
-  const [userId, setUserId] = useState(0);
+  const [memberTypeData, setMemberTypeData] = useState([]);
+  const [memberTypeId,setMemberTypeId] = useState(0);
 
-  const [memberTypeId, setMemberTypeId] = useState(0);
+  const [packageData, setPackageData] = useState([]);
   
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState('');
 
-  // useEffect(async () => {
-  //   const token = await AsyncStorage.getItem('jwtToken');
-  //   setToken(token);
-  //   let userId = await AsyncStorage.getItem('id');
-  //   userId = parseInt(userId);
-  //   setUserId(userId);
-   // getMemberTypeId(userId, token);
-    //displayTransportMode(token);
+  useEffect(async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    setToken(token);
+    // let userId = await AsyncStorage.getItem('id');
+    // userId = parseInt(userId);
+    displayTransportMode(token);
+    displayMemberType(token);
     
-  //},[refreshing]);
+  },[refreshing]);
 
   const showAlert = (title, message) => {
     Alert.alert(title, message, [
@@ -59,67 +53,86 @@ const PackageScreen = ({navigation}) => {
     setRefreshing(true);
   },[]);
 
-  // const getMemberTypeId = (userId, token) => {
-  //   if(userId == 0)
-  //   {
-  //     return;
-  //   }
-  //   const headers = { 'Authorization': 'Bearer ' + token };
-  //   axios.get(baseurl + '/member/' + userId,{ headers })
-  //     .then((response) => {
-  //       if(response.status == 200) {
-  //         setMemberTypeId(response.data[0].memberTypeId); 
-  //         getPkgByMemberType();
-  //       }  
-  //       else
-  //       {
-  //         showAlert('error', 'Network Error.');
-  //       }  
-        
-  //     })
-  //     .catch((error) => {
-  //       showAlert('Error','Network error');
-  //     });
-  // }
+  const displayTransportMode = (token) => {
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/transport-modes', { headers })
+      .then((response) => {
+        setLoading(false);
+        setRefreshing(false);
+        if (response.status == 200) {
+          setData(response.data);
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }
+        console.log("trans :",data);
+      })
+      .catch((error) => {
+        setLoading(false);
+        setRefreshing(false);
+        showAlert('error', 'Failed to get transport mode.');
+      })
+  }
+  const displayMemberType = (token) => {
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/member-types', { headers })
+      .then((response) => {
+        setLoading(false);
+        setRefreshing(false);
+        if (response.status == 200) {
+          setMemberTypeData(response.data);
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch((error) => {
+        setLoading(false);
+        setRefreshing(false);
+        showAlert('error', 'Failed to get pac.');
+      })
+  }
 
-
-  // const displayTransportMode = (token) => {
-  //   const headers = { 'Authorization': 'Bearer ' + token };
-  //   axios.get(baseurl + '/transport-modes', { headers })
-  //     .then(response => {
-  //       if (response.status == 200) {
-  //         setData(response.data);
-  //         let dt = response.data;
-  //         let arr = [];
-  //         for (let i = 0; i < dt.length; i++) {
-  //           arr.push({
-  //             value : dt[i].id,
-  //             label : dt[i].name
-  //           });
-  //         }
-  //         setTransportModeData(arr);
-  //       }
-  //       else {
-  //         showAlert('error', 'Network Error.');
-  //       }
-  //     })
-  //     .catch(error => {
-  //       console.log(error);
-  //       showAlert('error', 'Failed to get transport mode.');
-  //     })
-  // }
-
-  const onChangeTransportMode = (value) => {
-    console.log("id of transport mode :" , value);
-      setTransportModeId(value);
-     
+  const getPackageByTransportMode = (name) => {
+    const headers = {'Authorization': 'Bearer ' + token};
+    axios.get(baseurl + '/member-packages/memberId/' + memberTypeId, { headers })
+      .then((response) => {
+        setLoading(false);
+        setRefreshing(false);
+        if (response.status == 200) {
+          console.log("package data : ", response.data);
+          //setPackageData(response.data);
+          let dt=response.data
+          const filteredPkgData = dt.filter(function (item){
+            return item.transportMode==name;
+          });
+          console.log("After filter",filteredPkgData);
+          if(filteredPkgData=='')
+          {
+            showAlert('Information', 'There is no any packages for selected transport mode');
+          }
+          else{
+            setPackageData(filteredPkgData);
+          }
+        }  
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch((error) => {
+        setLoading(false);
+        setRefreshing(false);
+        showAlert('error', 'Failed to get package of selected transport mode');
+      })
     };
-  
-
+  const getPackageByMemberType = (memberTypeId) => {
+    setMemberTypeId(memberTypeId);
+    console.log("member type :", memberTypeId);
+  }
 
   return (
     
-    <ScrollView style={styles.container} keyboardShouldPersistTaps='handled'>
+    <ScrollView keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
     {/* <Spinner visible={loading} textContent='Loading...' textStyle={styles.spinnerTextStyle} /> */}
     <View style={styles.container}>
       <StatusBar  backgroundColor="#FE6666" barStyle="light-content" />  
@@ -127,136 +140,334 @@ const PackageScreen = ({navigation}) => {
           animation="fadeInUpBig"
           style={styles.footer}
         >
-          <View style={styles.btnContainer}>
-            <View style={styles.button}>
-              <TouchableOpacity
-                //onPress={packageRequesthandler}
-                style={styles.mode}
-              >
-              <Text style={[styles.textMode, {
-                color: '#FE6666'
-              }]}>BUS</Text>
-              </TouchableOpacity>
-              
-            </View>
-            <View style={styles.button}>
-              <TouchableOpacity
-                //onPress={packageRequesthandler}
-                style={styles.mode}
-              >
-              <Text style={[styles.textMode, {
-                color: '#FE6666'
-              }]}>TRAM</Text>
-              </TouchableOpacity>
-              
-            </View>
-            <View style={styles.button}>
-              <TouchableOpacity
-                //onPress={packageRequesthandler}
-                style={styles.mode}
-              >
-              <Text style={[styles.textMode, {
-                color: '#FE6666'
-              }]}>METRO</Text>
-              </TouchableOpacity>
-              
-            </View>
-            <View style={styles.button}>
-              <TouchableOpacity
-                //onPress={packageRequesthandler}
-                style={styles.mode}
-              >
-              <Text style={[styles.textMode, {
-                color: '#FE6666'
-              }]}>ALL</Text>
-              </TouchableOpacity>
-              
-            </View>
-          </View>
-          
+        {loading == true && (<ActivityIndicator size="large" color="#bdc4ca" />)}
 
-          <View style={styles.rect}>
-            <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
-              <Text style={styles.package}>Package Name</Text>
-            </View>
-            
-              <View style={{ display: "flex", flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={styles.pkgPrice}>
-                  {/* <FontAwesome
-                    name="user-o"
-                    color="#FE6666"
-                    size={20}
-                  /> */}
-                  <Text style={styles.amount}>Rs</Text>
-                  <Text style={styles.amount}>149</Text>
-                </View>
-           
-                <View style={styles.pkgValidity}>
-                  <Text style={styles.day}>256 Days</Text>
-                </View>
-                
-              </View>
-              <View style={{ height: 30, marginTop: 25}}>
-                <Text style={{ textAlign: 'center', fontSize: 16 }}>Kids,Adult,Senior Citizen</Text>
+        <View style={styles.btnContainer}>
+          {
+            memberTypeData && memberTypeData.map((item, index)=> (
+              <View style={styles.button}>  
+                <TouchableOpacity
+                  key={item.memberTypeId}
+                  onPress={ () => getPackageByMemberType(item.memberTypeId) }
+                  style={styles.memberType}
+                  >
+                  <Text style={[styles.mTypetext, {
+                    color: '#000000'
+                  }]}>{item.memberTypeName}</Text>
+                </TouchableOpacity>  
               </View> 
-          </View>  
-          <View style={styles.rect}>
-            <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
-              <Text style={styles.package}>Package Name</Text>
-            </View>
-            
-              <View style={{ display: "flex", flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={styles.pkgPrice}>
-                  {/* <FontAwesome
-                    name="user-o"
-                    color="#FE6666"
-                    size={20}
-                  /> */}
-                  <Text style={styles.amount}>Rs</Text>
-                  <Text style={styles.amount}>250</Text>
-                </View>
-           
-                <View style={styles.pkgValidity}>
-                  <Text style={styles.day}>298 Days</Text>
-                </View>
-                
-              </View>
-              <View style={{ height: 30, marginTop: 25}}>
-                <Text style={{ textAlign: 'center', fontSize: 16 }}>Kids,Adult,Senior Citizen</Text>
+            ))
+          }
+        </View>
+        <View
+          style={{
+            marginTop:20,
+            borderBottomColor: '#C5DAF0',
+            borderBottomWidth: 1,
+          }}
+        />
+        <View style={styles.btnContainer}>
+          {
+            data && data.map((item, index)=> (
+              <View style={styles.button}>  
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={ () => getPackageByTransportMode(item.name) }
+                  style={styles.mode}
+                  >
+                  <Text style={styles.modetext}>{item.name}</Text>
+                </TouchableOpacity>  
               </View> 
-          </View>  
-          
-          <View style={styles.rect}>
-            <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
-              <Text style={styles.package}>Package Name</Text>
+            ))
+          }
+        </View>
+
+
+        {
+          packageData && packageData.map((item, index) => (
+            <View>
+            <View style={{ backgroundColor:'#ff8000', padding:10, width:'50%',borderRadius:100,position:'relative',left:80,top:35 }}>
+                <Text style={styles.Tmodetext}>{item.transportMode}</Text>
             </View>
-            
-              <View style={{ display: "flex", flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={styles.pkgPrice}>
-                  {/* <FontAwesome
-                    name="user-o"
-                    color="#FE6666"
-                    size={20}
-                  /> */}
-                  <Text style={styles.amount}>Rs</Text>
-                  <Text style={styles.amount}>149</Text>
-                </View>
-           
-                <View style={styles.pkgValidity}>
-                  <Text style={styles.day}>256 Days</Text>
-                </View>
-                
+            <View style={styles.rect}>
+              <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
+                <Text style={styles.package}>{item.name}</Text>
               </View>
-              <View style={{ height: 30, marginTop: 25}}>
-                <Text style={{ textAlign: 'center', fontSize: 16 }}>Kids,Adult,Senior Citizen</Text>
+              
+                <View style={{display: "flex", flexDirection: 'row', }}>
+                  <View style={styles.pkgPrice}>
+                    <View style={{display: "flex", flexDirection: 'row'}}>
+                      <Icon name="currency-inr" color="#000000" size={25} />
+                      <Text style={styles.amount}>{item.price}</Text>
+                    </View>  
+                    <Text style={{fontSize: 14,marginLeft:8,fontWeight:'bold' }}>{item.discountPercentage} % off</Text>
+                  </View>
+            
+                  <View style={styles.pkgValidity}>
+                    <Text style={styles.day}>{item.validity} Days</Text>
+                    <Text style={{fontSize: 15 }}>Validity</Text>
+                  </View>
+                  
+                </View>
+                <View style={{ height: 30, marginBottom: 10}}>
+                  <Text style={{textAlign: 'center', fontSize: 16 }}>Subscription</Text>
+                  <Text style={{ textAlign: 'center', fontSize: 14, fontWeight: 'bold' }}>{item.subscriptionType}</Text>
+                </View> 
+            </View> 
+          </View>
+
+          ))
+        }
+
+        
+        </Animatable.View>
+      </View>
+    </ScrollView>
+  );
+
+}
+
+function BuyPackages({navigation}){
+
+  const [data, setData] = useState([]);
+  const [memberTypeData, setMemberTypeData] = useState([]);
+  const [memberTypeId,setMemberTypeId] = useState(0);
+  const [memberId,setMemberId] = useState(0);
+  const [passNo, setPassNo] = useState('');
+
+  const [packageData, setPackageData] = useState([]);
+  
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState('');
+
+  useEffect(async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    setToken(token);
+    let userId = await AsyncStorage.getItem('id');
+    userId = parseInt(userId);
+    displayTransportMode(token);
+    packageEligibility(userId, token);
+    
+  },[refreshing]);
+
+  const showAlert = (title, message) => {
+    Alert.alert(title, message, [
+      {text: 'Okay'}
+    ]);
+  }
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+  },[]);
+
+  const packageEligibility = (userId, token) => {
+    if(userId == 0)
+    {
+      return;
+    }
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/member/' + userId,{ headers })
+      .then((response) => {
+        
+        if(response.status == 200) {
+          if(response.data[0].status==1){
+            setMemberTypeId(response.data[0].memberTypeId);
+            setMemberId(response.data[0].memberId);
+            console.log("Pass status : ",response.data[0].status);
+
+            axios.get(baseurl + '/passes/member/' + memberId, { headers })
+              .then((response) => {
+                setLoading(false);
+                setRefreshing(false);
+                if(response.status == 200)
+                {
+                    console.log("Pass Detail : ", response.data);
+                    setPassNo(response.data[0].serialNo)
+                }
+                else {
+                  showAlert('error', 'Network Error.');
+                }  
+              })
+              .catch((error) => {
+                setLoading(false);
+                setRefreshing(false);
+                showAlert('Error','Failed to find pass number of logged in user');
+              });  
+          }
+          else
+          {
+            showAlert('Information', 'You are not eligible to buy any package. You should have to request for pass.');
+          }
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }  
+        
+      })
+      .catch((error) => {
+        setLoading(false);
+        setRefreshing(false);
+        showAlert('Error','Failed to find member type of logged in user');
+      });  
+  }
+  
+  const displayTransportMode = (token) => {
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/transport-modes', { headers })
+      .then((response) => {
+        setLoading(false);
+        setRefreshing(false);
+        if (response.status == 200) {
+          setData(response.data);
+        }
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch(error => {
+        setLoading(false);
+        setRefreshing(false);
+        showAlert('error', 'Failed to get transport mode.');
+      })
+  }
+
+
+  const getPackageByTransportMode = (name) => {
+    const headers = {'Authorization': 'Bearer ' + token};
+    axios.get(baseurl + '/member-packages/memberId/' + memberTypeId, { headers })
+      .then((response) => {
+        setLoading(false);
+        setRefreshing(false);
+        if (response.status == 200) {
+          console.log("package data : ", response.data);
+          let dt=response.data
+          const filteredPkgData = dt.filter(function (item){
+            return item.transportMode==name;
+          });
+          console.log("After filter",filteredPkgData);
+          if(filteredPkgData=='')
+          {
+            showAlert('Information', 'There is no any packages for selected transport mode');
+          }
+          else{
+            setPackageData(filteredPkgData);
+          }
+        }  
+        else {
+          showAlert('error', 'Network Error.');
+        }
+      })
+      .catch(error => {
+        setLoading(false);
+        setRefreshing(false);
+        showAlert('error', 'Failed to get package of selected transport mode');
+      })
+    };
+
+  // const getPackageByMemberType = (memberTypeId) => {
+  //   setMemberTypeId(memberTypeId);
+  //   console.log("member type :", memberTypeId);
+  // }
+
+
+  return (
+    
+    <ScrollView keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    {/* <Spinner visible={loading} textContent='Loading...' textStyle={styles.spinnerTextStyle} /> */}
+    <View style={styles.container}>
+      <StatusBar  backgroundColor="#FE6666" barStyle="light-content" />  
+        <Animatable.View 
+          animation="fadeInUpBig"
+          style={styles.footer}
+        >
+       
+        {loading == true && (<ActivityIndicator size="large" color="#bdc4ca" />)}
+
+        <View style={styles.btnContainer}>
+          {
+            data && data.map((item, index)=> (
+              <View style={styles.button}>  
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={ () => getPackageByTransportMode(item.name) }
+                  style={styles.mode}
+                  >
+                  <Text style={styles.modetext}>{item.name}</Text>
+                </TouchableOpacity>  
               </View> 
-          </View>  
-          
+            ))
+          }
+        </View>
+
+        <View
+          style={{
+            marginTop:20,
+            borderBottomColor: '#C5DAF0',
+            borderBottomWidth: 1,
+          }}
+        />
+
+        {
+          packageData && packageData.map((item, index) => (
+            
+            <View style={styles.rect}>
+              <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
+                <Text style={styles.package}>{item.name}</Text>
+              </View>
+              
+                <View style={{display: "flex", flexDirection: 'row', }}>
+                  <View style={styles.pkgPrice}>
+                    <View style={{display: "flex", flexDirection: 'row'}}>
+                      <Icon name="currency-inr" color="#000000" size={25} />
+                      <Text style={styles.amount}>{item.price}</Text>
+                    </View>  
+                    <Text style={{fontSize: 14,marginLeft:8,fontWeight:'bold' }}>{item.discountPercentage} % off</Text>
+                  </View>
+            
+                  <View style={styles.pkgValidity}>
+                    <Text style={styles.day}>{item.validity} Days</Text>
+                    <Text style={{fontSize: 15 }}>Validity</Text>
+                  </View>
+                  
+                </View>
+
+                <View style={{marginBottom: 10,display: "flex", flexDirection: 'row' }}>
+                  <View style={{padding:8}}>
+                    <Text style={{fontSize: 14}}>Transport Mode : {item.transportMode}</Text>
+                    <Text style={{fontSize: 14 }}>Pass No. {passNo}</Text>
+                  </View>  
+                  <View>
+                  <TouchableOpacity
+                    //onPress={handleSignUp}
+                    style={[styles.buy]}>
+                  <Text style={[styles.textBuy]}>Pay <Icon name="currency-inr" color="#000000" size={18} />{item.price-((item.price*item.discountPercentage)/100)} </Text>
+                  </TouchableOpacity>
+                  </View>
+                </View> 
+
+            </View> 
+      
+          ))
+        }
+  
           
         </Animatable.View>
       </View>
     </ScrollView>
   );
+
+
+}
+
+const PackageScreen = () => {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="View Packages" component={ViewPackages} />
+      <Tab.Screen name="Buy Package" component={BuyPackages} />
+    </Tab.Navigator>
+  );
+  
 };
 
 export default PackageScreen;
@@ -270,10 +481,8 @@ const styles = StyleSheet.create({
   footer: {
       flex: 3,
       backgroundColor: '#fff',
-      borderTopLeftRadius: 30,
-      borderTopRightRadius: 30,
-      paddingHorizontal: 20,
-      paddingVertical: 20
+      paddingHorizontal: 10,
+      paddingVertical: 10
   },
  
   text_footer: {
@@ -287,10 +496,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 15
+    marginTop: 10,
+    
   },
   button: {
     flex: 1
+  },
+  memberType: {
+    width: '90%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 50,
+    backgroundColor: '#EBF2FA',
+    marginTop: 10,
+  },
+  mTypetext: {
+    fontWeight: 'bold',
+    fontFamily: "roboto-regular",
+    color: "#000000",
+    fontSize: 14,
+    textAlign: "center"
   },
   mode: {
     width: '90%',
@@ -298,74 +524,81 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 50, 
-    borderColor: '#FE6666',
-    borderWidth: 1,
+    backgroundColor: '#ACC4E0',
     marginTop: 10,
   },
- 
-  textMode: {
-      fontSize: 14,
-      fontWeight: 'bold'
+  modetext: {
+    fontWeight: 'bold',
+    fontFamily: "roboto-regular",
+    color: "#000000",
+    fontSize: 14,
+    textAlign: "center"
   },
-
   rect: {
     width: '90%',
-    height: 170,
+    height: 200,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderRadius:10,
     borderColor: '#B7CADC',
-    marginTop: 20,
+    marginTop:30,
     marginLeft: 15,
+   
   },
-
+  Tmodetext:{
+    textAlign: 'center', 
+    fontSize: 16, 
+    fontWeight: 'bold'
+  },
   package: {
     fontFamily: "roboto-regular",
     color: "#121212",
-    fontSize: 16,
-    textAlign: "center"
+    fontSize: 18,
+    textAlign: "center",
+    fontWeight: 'bold'
   },
 
   pkgPrice: {
-    // height: 95,
-    display: "flex",
-    flexDirection: "row",
-    marginTop: 10,
+    height: 70,
+    width: '30%',
+    marginTop: 15,
     marginLeft: 10,
     // alignSelf: "flex-start"
     // flex: 4
-  
   },
-  // ellipse: {
-  //   width: 61,
-  //   height: 61,
-  //   marginTop: 0,
-  //   borderRadius: 30,
-  //   marginLeft: 7
-  // },
   amount: {
     fontFamily: "roboto-regular",
     color: "#121212",
-    fontSize: 20,
-    marginLeft: 10,
-    marginTop: 20,
+    fontSize: 22,
     fontWeight: "bold"
   },
   pkgValidity: {
-    display: 'flex',
-    flexDirection: "row",
+    //display: 'flex',
+    //flexDirection: "row",
     marginTop: 10,
-    marginRight: 10,
+    marginLeft: 110,
+  
   },
   day: {
     fontFamily: "roboto-regular",
     color: "#121212",
     fontSize: 20,
     marginRight: 10,
-    marginTop: 20,
-    fontWeight: "bold",
-   
+    fontWeight: "bold"
   },
+  buy: {
+    padding:15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor:'#ff8000',
+    borderRadius:5,
+    marginLeft:15
+  },
+  textBuy: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color:'#000000'
+  }
 });
 
 

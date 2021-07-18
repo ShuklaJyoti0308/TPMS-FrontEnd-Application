@@ -14,6 +14,7 @@ const ViewPassScreen = ({navigation}) => {
   const [passApproval, setPassApproval] = useState(false);
   const [requestData, setRequestData] = useState([]);
   const [passData, setPassData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(async () => {
     const token = await AsyncStorage.getItem('jwtToken');

@@ -12,6 +12,7 @@ import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import com.razorpay.rn.RazorpayPackage;
 // imported async storage , remove if error occurs
 //import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;
 

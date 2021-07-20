@@ -181,6 +181,10 @@ const LoginScreen = ({navigation}) => {
         </View>
 
         <View style={styles.button}>
+            <TouchableOpacity style={styles.forgetLink}>
+              <Text style={{ color: '#B5C7DF', marginTop: 0,fontWeight: 'bold',fontSize: 16, textDecorationLine: 'underline' }}>Forget Password ?</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={handleSignIn}
               style={[styles.signIn, {
@@ -195,7 +199,7 @@ const LoginScreen = ({navigation}) => {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.linkStyle} onPress={() => navigation.navigate('RegistrationScreen')}>
-              <Text style={{ color: '#FE6666', marginTop: 15, fontSize: 16, textDecorationLine: 'underline' }}>Don't have an account yet ? Sign Up</Text>
+              <Text style={{ color: '#B5C7DF', fontWeight: 'bold', marginTop: 15, fontSize: 16, textDecorationLine: 'underline' }}>Don't have an account yet ? Sign Up</Text>
             </TouchableOpacity>
 
         </View> 
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
     },
     button: {
         alignItems: 'center',
-        marginTop: 50
+        marginTop: 30  
     },
     signIn: {
         width: '100%',
@@ -279,6 +283,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold'
     },
     linkStyle: {
-      marginTop: 20
+      marginTop: 15
+    },
+
+    forgetLink:{
+      marginBottom:20
     }
   });

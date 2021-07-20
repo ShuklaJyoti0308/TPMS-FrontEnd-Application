@@ -8,6 +8,7 @@
  */
 
  import React, {useEffect} from 'react';
+ import RazorpayCheckout from 'react-native-razorpay';
  import type {Node} from 'react';
  import {SafeAreaProvider} from 'react-native-safe-area-context';
  import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,7 +26,7 @@
  const Stack = createStackNavigator();
  
   const App: () => Node = () => {
- 
+  
    const initialLoginState = {
      // isLoading: true,
      userName: '',
@@ -108,6 +109,7 @@
  
  
     return (
+      
       <SafeAreaProvider>
         <AuthContext.Provider value={authContext}>
        <NavigationContainer>

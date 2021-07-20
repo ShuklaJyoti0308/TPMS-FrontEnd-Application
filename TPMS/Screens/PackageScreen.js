@@ -19,7 +19,7 @@ import moment from "moment";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
-
+import ViewEnrolledPkgScreen from './ViewEnrolledPkgScreen';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -28,12 +28,17 @@ const PackageScreen = () => {
     <Tab.Navigator>
       <Tab.Screen name="View Packages" component={ViewPackages} />
       <Tab.Screen name="Buy Package" component={BuyPackages} />
+      <Tab.Screen name="Enrolled Package" component={ViewEnrolledPackage} />
     </Tab.Navigator>
   );
   
 };
 
 export default PackageScreen;
+
+function ViewEnrolledPackage(){
+  return <ViewEnrolledPkgScreen />
+}
 
 function ViewPackages(){
   const [data, setData] = useState([]);
@@ -471,7 +476,7 @@ function BuyPackages({navigation}){
               // handle success
               showAlert('Success','Payment Successful !!');
               const requestData = {
-                //amount: amount,
+                amount: amount,
                 passId:passId,
                 packageId:selectedPkgId,
                 isActive:1

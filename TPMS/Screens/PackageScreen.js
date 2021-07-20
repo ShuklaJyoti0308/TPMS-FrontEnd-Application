@@ -1,3 +1,4 @@
+import RazorpayCheckout from 'react-native-razorpay';
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -14,13 +15,25 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Animatable from 'react-native-animatable';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-
+import moment from "moment";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {baseurl} from '../config';
 import axios from 'axios';
 
 
 const Tab = createMaterialTopTabNavigator();
+
+const PackageScreen = () => {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="View Packages" component={ViewPackages} />
+      <Tab.Screen name="Buy Package" component={BuyPackages} />
+    </Tab.Navigator>
+  );
+  
+};
+
+export default PackageScreen;
 
 function ViewPackages(){
   const [data, setData] = useState([]);
@@ -36,11 +49,9 @@ function ViewPackages(){
   useEffect(async () => {
     const token = await AsyncStorage.getItem('jwtToken');
     setToken(token);
-    // let userId = await AsyncStorage.getItem('id');
-    // userId = parseInt(userId);
     displayTransportMode(token);
     displayMemberType(token);
-    
+
   },[refreshing]);
 
   const showAlert = (title, message) => {
@@ -89,7 +100,7 @@ function ViewPackages(){
       .catch((error) => {
         setLoading(false);
         setRefreshing(false);
-        showAlert('error', 'Failed to get pac.');
+        showAlert('error', 'Failed to get member types.');
       })
   }
 
@@ -145,9 +156,8 @@ function ViewPackages(){
         <View style={styles.btnContainer}>
           {
             memberTypeData && memberTypeData.map((item, index)=> (
-              <View style={styles.button}>  
+              <View style={styles.button} key={item.memberTypeId}>  
                 <TouchableOpacity
-                  key={item.memberTypeId}
                   onPress={ () => getPackageByMemberType(item.memberTypeId) }
                   style={styles.memberType}
                   >
@@ -169,9 +179,8 @@ function ViewPackages(){
         <View style={styles.btnContainer}>
           {
             data && data.map((item, index)=> (
-              <View style={styles.button}>  
+              <View style={styles.button}  key={item.id}>  
                 <TouchableOpacity
-                  key={item.id}
                   onPress={ () => getPackageByTransportMode(item.name) }
                   style={styles.mode}
                   >
@@ -185,14 +194,14 @@ function ViewPackages(){
 
         {
           packageData && packageData.map((item, index) => (
-            <View>
-            <View style={{ backgroundColor:'#ff8000', padding:10, width:'50%',borderRadius:100,position:'relative',left:80,top:35 }}>
-                <Text style={styles.Tmodetext}>{item.transportMode}</Text>
-            </View>
-            <View style={styles.rect}>
-              <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
-                <Text style={styles.package}>{item.name}</Text>
-              </View>
+            <View key={item.id}>
+                <View style={{ backgroundColor:'#ff8000', padding:10, width:'50%',borderRadius:100,position:'relative',left:80,top:35 }} key={item.id}>
+                    <Text style={styles.Tmodetext}>{item.transportMode}</Text>
+                </View>
+              <View style={styles.rect} key={item.id}>
+                <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
+                  <Text style={styles.package}>{item.name}</Text>
+                </View>
               
                 <View style={{display: "flex", flexDirection: 'row', }}>
                   <View style={styles.pkgPrice}>
@@ -209,8 +218,9 @@ function ViewPackages(){
                   </View>
                   
                 </View>
+
                 <View style={{ height: 30, marginBottom: 10}}>
-                  <Text style={{textAlign: 'center', fontSize: 16 }}>Subscription</Text>
+                  <Text style={{ textAlign: 'center', fontSize: 16 }}>Subscription</Text>
                   <Text style={{ textAlign: 'center', fontSize: 14, fontWeight: 'bold' }}>{item.subscriptionType}</Text>
                 </View> 
             </View> 
@@ -230,10 +240,14 @@ function ViewPackages(){
 function BuyPackages({navigation}){
 
   const [data, setData] = useState([]);
-  const [memberTypeData, setMemberTypeData] = useState([]);
   const [memberTypeId,setMemberTypeId] = useState(0);
   const [memberId,setMemberId] = useState(0);
   const [passNo, setPassNo] = useState('');
+
+  const [passId, setPassId] = useState(0);
+  const [enrolledPkgId,setEnrolledPkgId] = useState(0);
+  const [amount,setAmount] = useState(0);
+  const [todayDate, setTodayDate] = useState('');
 
   const [packageData, setPackageData] = useState([]);
   
@@ -241,13 +255,21 @@ function BuyPackages({navigation}){
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState('');
 
+
   useEffect(async () => {
+
     const token = await AsyncStorage.getItem('jwtToken');
     setToken(token);
     let userId = await AsyncStorage.getItem('id');
     userId = parseInt(userId);
-    displayTransportMode(token);
     packageEligibility(userId, token);
+    getMemberTypeId(userId, token);
+
+      
+    var date = new Date() //Current Date
+    let fDate=date.getDate() + "-" + parseInt(date.getMonth()+1) + "-" + date.getFullYear();
+    var currentDate = moment().format('YYYY-MM-DD');
+    setTodayDate(currentDate);
     
   },[refreshing]);
 
@@ -261,7 +283,7 @@ function BuyPackages({navigation}){
     setRefreshing(true);
   },[]);
 
-  const packageEligibility = (userId, token) => {
+   const getMemberTypeId = (userId, token) => {
     if(userId == 0)
     {
       return;
@@ -269,48 +291,42 @@ function BuyPackages({navigation}){
     const headers = { 'Authorization': 'Bearer ' + token };
     axios.get(baseurl + '/member/' + userId,{ headers })
       .then((response) => {
-        
         if(response.status == 200) {
-          if(response.data[0].status==1){
-            setMemberTypeId(response.data[0].memberTypeId);
-            setMemberId(response.data[0].memberId);
-            console.log("Pass status : ",response.data[0].status);
+          setMemberTypeId(response.data[0].memberTypeId); 
+        }
+      })
+  }
 
-            axios.get(baseurl + '/passes/member/' + memberId, { headers })
-              .then((response) => {
-                setLoading(false);
-                setRefreshing(false);
-                if(response.status == 200)
-                {
-                    console.log("Pass Detail : ", response.data);
-                    setPassNo(response.data[0].serialNo)
-                }
-                else {
-                  showAlert('error', 'Network Error.');
-                }  
-              })
-              .catch((error) => {
-                setLoading(false);
-                setRefreshing(false);
-                showAlert('Error','Failed to find pass number of logged in user');
-              });  
-          }
-          else
-          {
-            showAlert('Information', 'You are not eligible to buy any package. You should have to request for pass.');
-          }
+  const packageEligibility = (userId, token) => {
+    if(userId == 0)
+    {
+      return;
+    }
+    const headers = { 'Authorization': 'Bearer ' + token };
+    axios.get(baseurl + '/passes/userId/' + userId,{ headers })
+      .then((response) => {
+        setLoading(false);
+        setRefreshing(false);
+        if(response.status == 200) {
+          setMemberId(response.data[0].memberId);
+          setPassId(response.data[0].passId);
+          //console.log("Pass Exist : ",response.data);
+        
+          displayTransportMode(token);
+
         }
         else {
-          showAlert('error', 'Network Error.');
+          showAlert('Information', 'You are not eligible to buy any package. You should have to request for pass before buy any package.');
         }  
         
       })
       .catch((error) => {
         setLoading(false);
         setRefreshing(false);
-        showAlert('Error','Failed to find member type of logged in user');
+        showAlert('Information', 'You are not eligible to buy any package. You should have to request for pass before buy any package.');
       });  
   }
+  
   
   const displayTransportMode = (token) => {
     const headers = { 'Authorization': 'Bearer ' + token };
@@ -324,14 +340,14 @@ function BuyPackages({navigation}){
         else {
           showAlert('error', 'Network Error.');
         }
+        console.log("trans :",data);
       })
-      .catch(error => {
+      .catch((error) => {
         setLoading(false);
         setRefreshing(false);
         showAlert('error', 'Failed to get transport mode.');
       })
   }
-
 
   const getPackageByTransportMode = (name) => {
     const headers = {'Authorization': 'Bearer ' + token};
@@ -348,7 +364,7 @@ function BuyPackages({navigation}){
           console.log("After filter",filteredPkgData);
           if(filteredPkgData=='')
           {
-            showAlert('Information', 'There is no any packages for selected transport mode');
+            showAlert('Information', 'There is no any package available for selected transport mode');
           }
           else{
             setPackageData(filteredPkgData);
@@ -365,13 +381,127 @@ function BuyPackages({navigation}){
       })
     };
 
-  // const getPackageByMemberType = (memberTypeId) => {
-  //   setMemberTypeId(memberTypeId);
-  //   console.log("member type :", memberTypeId);
-  // }
+    const paymentStart = (amount,selectedPkgId) => {
+      const headers = { 'Authorization': 'Bearer ' + token }
+      // console.log("passid : ",passId);
+      // console.log("enroll pkg :",enrolledPkgId);
 
+      setAmount(amount);
+      setEnrolledPkgId(selectedPkgId);
 
-  return (
+      axios.get(baseurl + '/enrolled-packages/' + passId, {headers})
+      .then((response) => {
+        console.log("Enroll pkg :",response.data);
+        if(response.status==200)
+        {
+          
+          console.log("current date:",todayDate);
+          console.log("End Date:",response.data[0].end);
+           if(response.data[0].end > todayDate)
+           {
+             showAlert('Information', 'Sorry , You can not apply for this package as there is still active package for this pass.'); 
+           }
+           else if(response.data[0].end<todayDate) 
+           {
+              //update isActive to 0 when package is expire
+              const reqData = {
+                isActive: 0,
+                passId: passId
+              };
+              axios.put(baseurl + '/enrolled-packages/isActive', reqData, {headers})
+                .then((response) => {
+                  console.log("after update :",response.data);
+                  console.log(response.status);
+                  if(response.status == 200)
+                  {
+                    rechargePackage(amount,selectedPkgId);   
+                  }
+                })
+                             
+           }
+        } 
+        else {
+          showAlert('Warning', 'Sorry , You can recharge'); 
+        } 
+      })
+      .catch(error => {
+        rechargePackage(amount,selectedPkgId);   
+      })
+      
+    };
+
+    const rechargePackage = (amount,selectedPkgId) => {
+      console.log("passid : ",passId);
+      console.log("enroll pkg id :",selectedPkgId);
+      console.log("amount :",amount);
+      const headers = { 'Authorization': 'Bearer ' + token }
+      if(amount=='' || amount==null){
+        showAlert('Amount is required');
+        return;
+      }
+      const reqData = {
+        amount: amount,
+        info:'order_request'
+      };
+      axios.post(baseurl + '/create-order', reqData, {headers})
+        .then((response) => {
+          console.log(response.data.status);
+          if(response.status == 200)
+          {
+            var options = {
+              description: 'Credits towards travel',
+              image: 'https://drive.google.com/file/d/1w3_qI1bIUTyCzvu_BqASHxJKAlKOFIK2/view?usp=sharing',
+              currency: 'INR',
+              key: 'rzp_test_7qGLAEB07PuLai',
+              amount: response.data.amount,
+              name: 'TPMS',
+              order_id: response.data.id,
+              prefill: {
+                email: '',
+                contact: '',
+                name: ''
+              },
+              theme: {color: '#FF6103'}
+            }
+            RazorpayCheckout.open(options).then((data) => {
+              console.log(data.razorpay_payment_id)
+              console.log(data.razorpay_order_id)
+              console.log(data.razorpay_signature)
+           
+              // handle success
+              showAlert('Success','Payment Successful !!');
+              const requestData = {
+                //amount: amount,
+                passId:passId,
+                packageId:selectedPkgId,
+                isActive:1
+              };
+              const headers = { 'Authorization': 'Bearer ' + token }
+              axios.post(baseurl + '/enrolled-packages', requestData, {headers})
+              .then((response) => {
+                if(response.status == 201)
+                {
+                  showAlert('Success','Your Package has been enrolled successfully.');
+                }
+                else{
+                  showAlert('Failure','Your package enrollment failed, Try again after sometimes...');
+                }
+              }).catch((error) => {
+                console.log(error.response);
+              })
+              
+            }).catch((error) => {
+              // handle failure
+              alert(`Error: ${error.code} | ${error.description}`);
+              showAlert('Failed','Oops payment transaction failed !! Try Again...');
+            });
+          }
+       })
+      
+    }
+
+   return (
+     
     
     <ScrollView keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
     {/* <Spinner visible={loading} textContent='Loading...' textStyle={styles.spinnerTextStyle} /> */}
@@ -387,9 +517,8 @@ function BuyPackages({navigation}){
         <View style={styles.btnContainer}>
           {
             data && data.map((item, index)=> (
-              <View style={styles.button}>  
+              <View style={styles.button}  key={item.id}>  
                 <TouchableOpacity
-                  key={item.id}
                   onPress={ () => getPackageByTransportMode(item.name) }
                   style={styles.mode}
                   >
@@ -411,7 +540,7 @@ function BuyPackages({navigation}){
         {
           packageData && packageData.map((item, index) => (
             
-            <View style={styles.rect}>
+            <View style={styles.rect} key={item.id}>
               <View style={{ backgroundColor:'#EBF5FA', padding:15, borderTopLeftRadius:10,borderTopRightRadius:10 }}>
                 <Text style={styles.package}>{item.name}</Text>
               </View>
@@ -439,9 +568,10 @@ function BuyPackages({navigation}){
                   </View>  
                   <View>
                   <TouchableOpacity
-                    //onPress={handleSignUp}
+                    onPress={ () => paymentStart( (item.price-((item.price*item.discountPercentage)/100)), item.id ) }
                     style={[styles.buy]}>
                   <Text style={[styles.textBuy]}>Pay <Icon name="currency-inr" color="#000000" size={18} />{item.price-((item.price*item.discountPercentage)/100)} </Text>
+                    
                   </TouchableOpacity>
                   </View>
                 </View> 
@@ -459,18 +589,6 @@ function BuyPackages({navigation}){
 
 
 }
-
-const PackageScreen = () => {
-  return (
-    <Tab.Navigator>
-      <Tab.Screen name="View Packages" component={ViewPackages} />
-      <Tab.Screen name="Buy Package" component={BuyPackages} />
-    </Tab.Navigator>
-  );
-  
-};
-
-export default PackageScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -592,7 +710,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor:'#ff8000',
     borderRadius:5,
-    marginLeft:15
+    marginLeft:20
   },
   textBuy: {
     fontSize: 15,

@@ -25,7 +25,14 @@ const Tab = createMaterialTopTabNavigator();
 
 const PackageScreen = () => {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+    tabBarOptions={{
+      labelStyle: { fontSize: 14 },
+      style: { borderColor: '#ACC4E0',borderBottomWidth:1 },
+      activeTintColor: '#000000',
+      indicatorStyle: { borderColor: '#ACC4E0',borderBottomWidth:1}
+    }}
+  >
       <Tab.Screen name="View Packages" component={ViewPackages} />
       <Tab.Screen name="Buy Package" component={BuyPackages} />
       <Tab.Screen name="Enrolled Package" component={ViewEnrolledPackage} />
@@ -422,11 +429,10 @@ function BuyPackages({navigation}){
                     rechargePackage(amount,selectedPkgId);   
                   }
                 })
-                             
-           }
+              }
         } 
         else {
-          showAlert('Warning', 'Sorry , You can recharge'); 
+          showAlert('Warning', 'Network error'); 
         } 
       })
       .catch(error => {
@@ -455,7 +461,7 @@ function BuyPackages({navigation}){
           {
             var options = {
               description: 'Credits towards travel',
-              image: 'https://drive.google.com/file/d/1w3_qI1bIUTyCzvu_BqASHxJKAlKOFIK2/view?usp=sharing',
+              image: 'https://png.pngtree.com/png-clipart/20190902/original/pngtree-2-5d-gradient-background-track-red-retro-tram-material-png-image_4384275.jpg',
               currency: 'INR',
               key: 'rzp_test_7qGLAEB07PuLai',
               amount: response.data.amount,

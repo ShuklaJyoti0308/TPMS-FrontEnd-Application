@@ -121,7 +121,7 @@ const LoginScreen = ({navigation}) => {
         animation="fadeInUpBig"
         style={styles.footer}
       >
-      <ScrollView>
+      <ScrollView keyboardShouldPersistTaps="handled">
         <Text style={[styles.text_footer,{marginTop: 25}]}>Username</Text>
         <View style={styles.action}>
           <FontAwesome
@@ -181,7 +181,7 @@ const LoginScreen = ({navigation}) => {
         </View>
 
         <View style={styles.button}>
-            <TouchableOpacity style={styles.forgetLink}>
+            <TouchableOpacity style={styles.forgetLink} onPress={() => navigation.navigate('ForgetPasswordScreen')}>
               <Text style={{ color: '#B5C7DF', marginTop: 0,fontWeight: 'bold',fontSize: 16, textDecorationLine: 'underline' }}>Forget Password ?</Text>
             </TouchableOpacity>
 

@@ -19,7 +19,9 @@
   
  import RootStackScreen from './Screens/RootStackScreen';
  import MainTabScreen from './Screens/MainTabScreen';  
+ import ChangePasswordScreen from './Screens/ChangePasswordScreen';
  import { AuthContext } from './components/context';
+
  
  
  const Drawer = createDrawerNavigator();
@@ -116,6 +118,7 @@
        { loginState.jwtToken !== null ? (
          <Stack.Navigator screenOptions={{headerShown: false}}>
          <Stack.Screen name="MainTabScreen" component={MainTabScreen}/>
+         <Stack.Screen name="changePasswordScreen" component={ChangePasswordScreen} />
          </Stack.Navigator>
          
        ) 

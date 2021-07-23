@@ -150,7 +150,7 @@ const ProfileScreen = ({navigation}) => {
             <Text style={styles.menuItemText}>Update Your Profile</Text>
           </View>
         </TouchableRipple>
-        <TouchableRipple>
+        <TouchableRipple onPress={() => navigation.navigate('changePasswordScreen')}>
           <View style={styles.menuItem}>
             <Icon name="key-change" color="#FE6666" size={25} />
             <Text style={styles.menuItemText}>Change Password</Text>
